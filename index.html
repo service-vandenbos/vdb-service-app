@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>VDB Service</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body class="bg-slate-950 text-white">
     <div class="min-h-screen p-6">
@@ -48,64 +49,28 @@
               />
             </div>
 
-            <div class="relative h-[500px] overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,_#0f172a_0%,_#111827_100%)]">
+            <div id="map-area" class="relative h-[500px] overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,_#0f172a_0%,_#111827_100%)]">
               <div class="absolute inset-0 opacity-30">
                 <div class="absolute left-[12%] top-[18%] h-[42%] w-[26%] rounded-[48%] border border-cyan-200/15"></div>
                 <div class="absolute left-[28%] top-[34%] h-[18%] w-[12%] rounded-[44%] border border-cyan-200/15"></div>
                 <div class="absolute left-[42%] top-[25%] h-[33%] w-[21%] rounded-[44%] border border-cyan-200/15"></div>
               </div>
-
-              <button data-key="smurfit" class="marker absolute left-[41%] top-[38%] -translate-x-1/2 -translate-y-1/2">
-                <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
-                  VDB
-                </div>
-              </button>
-
-              <button data-key="bentheim" class="marker absolute left-[48%] top-[30%] -translate-x-1/2 -translate-y-1/2">
-                <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
-                  VDB
-                </div>
-              </button>
-
-              <button data-key="drei" class="marker absolute left-[63%] top-[58%] -translate-x-1/2 -translate-y-1/2">
-                <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
-                  VDB
-                </div>
-              </button>
-
-              <button data-key="boxline" class="marker absolute left-[43%] top-[35%] -translate-x-1/2 -translate-y-1/2">
-                <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
-                  VDB
-                </div>
-              </button>
-
-              <button data-key="smart" class="marker absolute left-[44%] top-[33%] -translate-x-1/2 -translate-y-1/2">
-                <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
-                  VDB
-                </div>
-              </button>
-
-              <button data-key="fulda" class="marker absolute left-[55%] top-[40%] -translate-x-1/2 -translate-y-1/2">
-                <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
-                  VDB
-                </div>
-              </button>
             </div>
           </section>
 
           <aside class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Klantdetail</div>
-            <h2 id="detail-name" class="mt-2 text-2xl font-semibold"></h2>
+            <h2 id="detail-name" class="mt-2 text-2xl font-semibold">Laden...</h2>
             <p id="detail-city" class="mt-1 text-sm text-slate-300"></p>
 
             <div class="mt-5 grid gap-3 sm:grid-cols-2">
               <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
                 <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Status</div>
-                <div id="detail-status" class="mt-2 text-base font-medium"></div>
+                <div id="detail-status" class="mt-2 text-base font-medium">-</div>
               </div>
               <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
                 <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Machines</div>
-                <div id="detail-count" class="mt-2 text-base font-medium"></div>
+                <div id="detail-count" class="mt-2 text-base font-medium">0</div>
               </div>
             </div>
 
@@ -133,111 +98,14 @@
       </div>
     </div>
 
-    <div id="service-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
-      <div class="w-full max-w-lg rounded-3xl border border-white/10 bg-slate-900 p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Service</div>
-            <h3 id="modal-title" class="mt-2 text-2xl font-semibold">Service registreren</h3>
-          </div>
-          <button id="close-modal-top" class="rounded-xl border border-white/10 px-3 py-2 text-sm">Sluiten</button>
-        </div>
-
-        <div class="mt-5 grid gap-4">
-          <label class="block">
-            <div class="mb-2 text-sm text-slate-300">Monteur</div>
-            <input id="engineer" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm" value="Hoofdmonteur" />
-          </label>
-
-          <label class="block">
-            <div class="mb-2 text-sm text-slate-300">Notitie</div>
-            <textarea id="service-note" rows="4" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm" placeholder="Bijvoorbeeld: klant wilde alleen onderhoud aan robot 1"></textarea>
-          </label>
-        </div>
-
-        <div class="mt-5 flex flex-wrap justify-end gap-2">
-          <button id="close-modal-bottom" class="rounded-2xl border border-white/10 px-4 py-2 text-sm">Annuleren</button>
-          <button id="save-service" class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">Opslaan</button>
-        </div>
-      </div>
-    </div>
-
     <script>
-      const customers = {
-        smurfit: {
-          name: "Smurfit Westrock Grootbijgaarden",
-          city: "Grootbijgaarden",
-          lat: "50.871",
-          lng: "4.256",
-          robotics: [
-            { name: "ROBOT 1", status: "Rood", lastService: "---" },
-            { name: "ROBOT 2", status: "Rood", lastService: "---" }
-          ],
-          cm: []
-        },
-        bentheim: {
-          name: "Model Bentheim",
-          city: "Bad Bentheim",
-          lat: "52.3168",
-          lng: "7.1667",
-          robotics: [
-            { name: "ROBOT 1", status: "Rood", lastService: "---" },
-            { name: "ROBOT 2", status: "Rood", lastService: "---" }
-          ],
-          cm: []
-        },
-        drei: {
-          name: "Drei V",
-          city: "München",
-          lat: "48.1565",
-          lng: "11.7583",
-          robotics: [
-            { name: "ROBOT 1", status: "Oranje", lastService: "05-2025" },
-            { name: "ROBOT 2", status: "Oranje", lastService: "05-2025" },
-            { name: "ROBOT 3", status: "Oranje", lastService: "05-2025" }
-          ],
-          cm: [
-            { name: "Afduwer", status: "Groen", lastService: "06-2025" }
-          ]
-        },
-        boxline: {
-          name: "Boxline",
-          city: "Merksplas",
-          lat: "51.3635",
-          lng: "4.8433",
-          robotics: [
-            { name: "ROBOT 1", status: "Oranje", lastService: "06-2025" },
-            { name: "ROBOT 2", status: "Groen", lastService: "11-2025" }
-          ],
-          cm: [
-            { name: "Machine 1", status: "Rood", lastService: "---" }
-          ]
-        },
-        smart: {
-          name: "Smart Packaging",
-          city: "Oosterhout",
-          lat: "51.6347",
-          lng: "4.9012",
-          robotics: [
-            { name: "ROBOT 1", status: "Oranje", lastService: "06-2025" }
-          ],
-          cm: []
-        },
-        fulda: {
-          name: "DS Smith Packaging Fulda",
-          city: "Fulda",
-          lat: "50.5401",
-          lng: "9.6974",
-          robotics: [
-            { name: "ROBOT 1", status: "Rood", lastService: "12-2023" }
-          ],
-          cm: [
-            { name: "Afduwer", status: "Rood", lastService: "01-2025" }
-          ]
-        }
-      };
+      // JOUW SUPABASE GEGEVENS
+      const SUPABASE_URL = "https://tbtoaeraevuygajyaggj.supabase.co";
+      const SUPABASE_ANON_KEY = "PLAK_HIER_JE_ANON_KEY";
 
-      const markers = document.querySelectorAll(".marker");
+      const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      const mapArea = document.getElementById("map-area");
       const detailName = document.getElementById("detail-name");
       const detailCity = document.getElementById("detail-city");
       const detailStatus = document.getElementById("detail-status");
@@ -252,21 +120,75 @@
       const metricRood = document.getElementById("metric-rood");
       const metricOranje = document.getElementById("metric-oranje");
 
-      const modal = document.getElementById("service-modal");
-      const closeModalTop = document.getElementById("close-modal-top");
-      const closeModalBottom = document.getElementById("close-modal-bottom");
-      const saveService = document.getElementById("save-service");
-      const modalTitle = document.getElementById("modal-title");
+      let customers = {};
+      let currentCustomerKey = null;
 
-      let currentCustomerKey = "smurfit";
-      let currentMachineName = "";
-      let currentMachineType = "";
+      function parseServiceMonth(value) {
+        if (!value || /^-+$/.test(String(value).trim())) return null;
+        const match = String(value).trim().match(/^(\\d{1,2})[-/](\\d{4})$/);
+        if (!match) return null;
+        return new Date(Number(match[2]), Number(match[1]) - 1, 1);
+      }
+
+      function monthDiff(start, end) {
+        if (!start || !end) return 999;
+        return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+      }
+
+      function machineStatus(lastService) {
+        const TODAY = new Date();
+        const parsed = parseServiceMonth(lastService);
+        if (!parsed) return "Rood";
+        const months = monthDiff(parsed, TODAY);
+        if (months >= 12) return "Rood";
+        if (months >= 9) return "Oranje";
+        return "Groen";
+      }
 
       function getCustomerStatus(customer) {
         const all = [...customer.robotics, ...customer.cm];
         if (all.some((m) => m.status === "Rood")) return "Rood";
         if (all.some((m) => m.status === "Oranje")) return "Oranje";
         return "Groen";
+      }
+
+      function markerColorClass(status) {
+        if (status === "Rood") return "bg-red-500";
+        if (status === "Oranje") return "bg-amber-400";
+        return "bg-emerald-500";
+      }
+
+      function statusPill(status) {
+        const cls = status === "Rood"
+          ? "bg-red-500/20 text-red-100"
+          : status === "Oranje"
+            ? "bg-amber-500/20 text-amber-100"
+            : "bg-emerald-500/20 text-emerald-100";
+
+        return `<span class="rounded-full px-3 py-1 text-xs font-semibold ${cls}">${status}</span>`;
+      }
+
+      function machineCard(machine) {
+        return `
+          <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <div class="font-medium">${machine.name}</div>
+                <div class="mt-1 text-sm text-slate-300">Laatste service: ${machine.lastService || "---"}</div>
+              </div>
+              ${statusPill(machine.status)}
+            </div>
+          </div>
+        `;
+      }
+
+      function projectToEurope(lat, lng) {
+        const x = ((Number(lng) + 10) / 35) * 100;
+        const y = 100 - (((Number(lat) - 35) / 25) * 100);
+        return {
+          left: `${Math.max(6, Math.min(94, x)).toFixed(1)}%`,
+          top: `${Math.max(8, Math.min(92, y)).toFixed(1)}%`
+        };
       }
 
       function updateMetrics() {
@@ -291,69 +213,25 @@
         metricOranje.textContent = oranje;
       }
 
-      function markerColorClass(status) {
-        if (status === "Rood") return "bg-red-500";
-        if (status === "Oranje") return "bg-amber-400";
-        return "bg-emerald-500";
-      }
-
-      function statusPill(status) {
-        const cls = status === "Rood"
-          ? "bg-red-500/20 text-red-100"
-          : status === "Oranje"
-            ? "bg-amber-500/20 text-amber-100"
-            : "bg-emerald-500/20 text-emerald-100";
-
-        return `<span class="rounded-full px-3 py-1 text-xs font-semibold ${cls}">${status}</span>`;
-      }
-
-      function machineCard(machine, type) {
-        return `
-          <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <div class="font-medium">${machine.name}</div>
-                <div class="mt-1 text-sm text-slate-300">Laatste service: ${machine.lastService}</div>
-              </div>
-              ${statusPill(machine.status)}
-            </div>
-            <div class="mt-4">
-              <button
-                class="service-machine rounded-xl border border-white/10 px-3 py-2 text-sm"
-                data-machine="${machine.name}"
-                data-type="${type}"
-              >Service</button>
-            </div>
-          </div>
-        `;
-      }
-
       function renderMarkers() {
-        markers.forEach((marker) => {
-          const key = marker.dataset.key;
-          const customer = customers[key];
-          const status = getCustomerStatus(customer);
-          const badge = marker.querySelector(".marker-badge");
+        document.querySelectorAll(".dynamic-marker").forEach((el) => el.remove());
 
-          if (badge) {
-            badge.classList.remove("bg-red-500", "bg-amber-400", "bg-emerald-500");
-            badge.classList.add(markerColorClass(status));
-          }
+        Object.keys(customers).forEach((key) => {
+          const c = customers[key];
+          const status = getCustomerStatus(c);
+          const pos = projectToEurope(c.lat, c.lng);
 
-          marker.dataset.name = customer.name;
-          marker.dataset.city = customer.city;
-          marker.dataset.status = status;
-        });
-      }
-
-      function bindMachineButtons() {
-        document.querySelectorAll(".service-machine").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            currentMachineName = btn.dataset.machine;
-            currentMachineType = btn.dataset.type;
-            modalTitle.textContent = `Service registreren - ${btn.dataset.machine}`;
-            openModal();
-          });
+          const btn = document.createElement("button");
+          btn.className = "dynamic-marker absolute -translate-x-1/2 -translate-y-1/2";
+          btn.style.left = pos.left;
+          btn.style.top = pos.top;
+          btn.innerHTML = `
+            <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg ${markerColorClass(status)}">
+              VDB
+            </div>
+          `;
+          btn.addEventListener("click", () => renderCustomer(key));
+          mapArea.appendChild(btn);
         });
       }
 
@@ -368,66 +246,97 @@
         wazeLink.href = `https://waze.com/ul?ll=${c.lat},${c.lng}&navigate=yes`;
 
         roboticsList.innerHTML = c.robotics.length
-          ? c.robotics.map((m) => machineCard(m, "Robotics")).join("")
+          ? c.robotics.map((m) => machineCard(m)).join("")
           : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen robotics machines</div>`;
 
         cmList.innerHTML = c.cm.length
-          ? c.cm.map((m) => machineCard(m, "CM")).join("")
+          ? c.cm.map((m) => machineCard(m)).join("")
           : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen CM machines</div>`;
 
-        bindMachineButtons();
-        renderMarkers();
         updateMetrics();
       }
 
-      function openModal() {
-        modal.classList.remove("hidden");
-        modal.classList.add("flex");
+      function filterMarkers() {
+        const q = search.value.toLowerCase();
+        document.querySelectorAll(".dynamic-marker").forEach((markerEl) => markerEl.remove());
+
+        Object.keys(customers).forEach((key) => {
+          const c = customers[key];
+          const txt = `${c.name} ${c.city}`.toLowerCase();
+          if (!txt.includes(q)) return;
+
+          const status = getCustomerStatus(c);
+          const pos = projectToEurope(c.lat, c.lng);
+
+          const btn = document.createElement("button");
+          btn.className = "dynamic-marker absolute -translate-x-1/2 -translate-y-1/2";
+          btn.style.left = pos.left;
+          btn.style.top = pos.top;
+          btn.innerHTML = `
+            <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg ${markerColorClass(status)}">
+              VDB
+            </div>
+          `;
+          btn.addEventListener("click", () => renderCustomer(key));
+          mapArea.appendChild(btn);
+        });
       }
 
-      function closeModal() {
-        modal.classList.add("hidden");
-        modal.classList.remove("flex");
-      }
+      async function loadData() {
+        const { data: customerRows, error: customerError } = await supabaseClient
+          .from("customers")
+          .select("id, name, city, latitude, longitude");
 
-      function saveCurrentMachine() {
-        const c = customers[currentCustomerKey];
-        const list = currentMachineType === "CM" ? c.cm : c.robotics;
+        const { data: machineRows, error: machineError } = await supabaseClient
+          .from("machines")
+          .select("customer_id, type, machine_name, last_service");
 
-        const idx = list.findIndex((m) => m.name === currentMachineName);
-        if (idx !== -1) {
-          list[idx].lastService = "03-2026";
-          list[idx].status = "Groen";
+        if (customerError || machineError) {
+          alert("Fout bij laden uit Supabase");
+          console.error(customerError || machineError);
+          return;
         }
 
-        renderCustomer(currentCustomerKey);
-        closeModal();
+        customers = {};
+
+        customerRows.forEach((row) => {
+          customers[row.id] = {
+            name: row.name || "Onbekend",
+            city: row.city || "",
+            lat: row.latitude || 50,
+            lng: row.longitude || 5,
+            robotics: [],
+            cm: []
+          };
+        });
+
+        machineRows.forEach((row) => {
+          if (!customers[row.customer_id]) return;
+
+          const machine = {
+            name: row.machine_name || "Machine",
+            lastService: row.last_service || "---",
+            status: machineStatus(row.last_service || "---")
+          };
+
+          if ((row.type || "").toLowerCase() === "cm") {
+            customers[row.customer_id].cm.push(machine);
+          } else {
+            customers[row.customer_id].robotics.push(machine);
+          }
+        });
+
+        renderMarkers();
+
+        const firstKey = Object.keys(customers)[0];
+        if (firstKey) {
+          renderCustomer(firstKey);
+        }
       }
 
-      markers.forEach((marker) => {
-        marker.addEventListener("click", () => {
-          renderCustomer(marker.dataset.key);
-        });
-      });
+      search.addEventListener("input", filterMarkers);
 
-      search.addEventListener("input", () => {
-        const q = search.value.toLowerCase();
-        markers.forEach((marker) => {
-          const c = customers[marker.dataset.key];
-          const txt = `${c.name} ${c.city}`.toLowerCase();
-          marker.style.display = txt.includes(q) ? "flex" : "none";
-        });
-      });
-
-      closeModalTop.addEventListener("click", closeModal);
-      closeModalBottom.addEventListener("click", closeModal);
-      saveService.addEventListener("click", saveCurrentMachine);
-
-      modal.addEventListener("click", (e) => {
-        if (e.target === modal) closeModal();
-      });
-
-      renderCustomer("smurfit");
+      loadData();
     </script>
   </body>
 </html>
