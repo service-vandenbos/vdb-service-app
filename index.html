@@ -364,10 +364,37 @@
       closeModalTop.addEventListener("click", closeModal);
       closeModalBottom.addEventListener("click", closeModal);
 
-      saveService.addEventListener("click", () => {
-        alert(`Service opgeslagen voor ${currentMachineName}`);
-        closeModal();
-      });
+     saveService.addEventListener("click", () => {
+  const c = customers[currentCustomerKey];
+
+  function updateMachine(list) {
+    return list.map((machine) => {
+      if (machine.name === currentMachineName) {
+        return {
+          ...machine,
+          lastService: "03-2026",
+          status: "Groen"
+        };
+      }
+      return machine;
+    });
+  }
+
+  c.robotics = updateMachine(c.robotics);
+  c.cm = updateMachine(c.cm);
+
+  let allMachines = [...c.robotics, ...c.cm];
+  if (allMachines.some((m) => m.status === "Rood")) {
+    c.status = "Rood";
+  } else if (allMachines.some((m) => m.status === "Oranje")) {
+    c.status = "Oranje";
+  } else {
+    c.status = "Groen";
+  }
+
+  renderCustomer(currentCustomerKey);
+  closeModal();
+});
 
       modal.addEventListener("click", (e) => {
         if (e.target === modal) closeModal();
