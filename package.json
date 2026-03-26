@@ -1,8 +1,9 @@
+
 {
   "name": "vdb-service",
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "mkdir dist && copy index.html dist\\index.html || cp index.html dist/index.html"
+    "build": "mkdir -p dist src && cp index.html dist/index.html && cp src/main.jsx dist/main.jsx"
   }
 }
