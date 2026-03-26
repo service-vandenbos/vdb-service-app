@@ -1,12 +1,125 @@
 <!doctype html>
-<html>
+<html lang="nl">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>VDB Service</title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/main.jsx"></script>
+  <body class="bg-slate-950 text-white">
+    <div class="min-h-screen p-6">
+      <div class="mx-auto max-w-6xl">
+        <div class="mb-6 rounded-3xl border border-white/10 bg-slate-900 p-6">
+          <div class="text-xs uppercase tracking-[0.35em] text-cyan-300">VDB Service</div>
+          <h1 class="mt-2 text-3xl font-semibold">Van den Bos Service</h1>
+          <p class="mt-2 text-slate-300">Robot Service App</p>
+        </div>
+
+        <div class="mb-6 grid gap-4 md:grid-cols-4">
+          <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
+            <div class="text-sm text-slate-300">Locaties</div>
+            <div class="mt-2 text-3xl font-semibold">6</div>
+          </div>
+          <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
+            <div class="text-sm text-slate-300">Machines</div>
+            <div class="mt-2 text-3xl font-semibold">12</div>
+          </div>
+          <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
+            <div class="text-sm text-slate-300">Rood</div>
+            <div class="mt-2 text-3xl font-semibold text-red-400">4</div>
+          </div>
+          <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
+            <div class="text-sm text-slate-300">Oranje</div>
+            <div class="mt-2 text-3xl font-semibold text-amber-400">3</div>
+          </div>
+        </div>
+
+        <div class="grid gap-6 xl:grid-cols-[1.3fr_0.9fr]">
+          <section class="rounded-3xl border border-white/10 bg-slate-900 p-5">
+            <div class="mb-4 flex items-center justify-between">
+              <div>
+                <h2 class="text-xl font-semibold">Europa kaart</h2>
+                <p class="text-sm text-slate-300">Basis testweergave</p>
+              </div>
+              <input
+                id="search"
+                placeholder="Zoek klant"
+                class="rounded-2xl border border-white/10 bg-slate-800 px-4 py-2 text-sm"
+              />
+            </div>
+
+            <div class="relative h-[500px] overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,_#0f172a_0%,_#111827_100%)]">
+              <div class="absolute inset-0 opacity-30">
+                <div class="absolute left-[12%] top-[18%] h-[42%] w-[26%] rounded-[48%] border border-cyan-200/15"></div>
+                <div class="absolute left-[28%] top-[34%] h-[18%] w-[12%] rounded-[44%] border border-cyan-200/15"></div>
+                <div class="absolute left-[42%] top-[25%] h-[33%] w-[21%] rounded-[44%] border border-cyan-200/15"></div>
+              </div>
+
+              <button data-name="Smurfit Westrock Grootbijgaarden" data-city="Grootbijgaarden" data-status="Rood" data-type="Robotics" class="marker absolute left-[41%] top-[38%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-xl">🤖</button>
+              <button data-name="Model Bentheim" data-city="Bad Bentheim" data-status="Rood" data-type="Robotics" class="marker absolute left-[48%] top-[30%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-xl">🤖</button>
+              <button data-name="Drei V" data-city="München" data-status="Oranje" data-type="Robotics + CM" class="marker absolute left-[63%] top-[58%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-amber-500 text-lg shadow-xl">🤖</button>
+              <button data-name="Boxline" data-city="Merksplas" data-status="Rood" data-type="Robotics + CM" class="marker absolute left-[43%] top-[35%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-xl">🤖</button>
+              <button data-name="Smart Packaging" data-city="Oosterhout" data-status="Oranje" data-type="Robotics" class="marker absolute left-[44%] top-[33%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-amber-500 text-lg shadow-xl">🤖</button>
+              <button data-name="DS Smith Packaging Fulda" data-city="Fulda" data-status="Rood" data-type="Robotics + CM" class="marker absolute left-[55%] top-[40%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-xl">🤖</button>
+            </div>
+          </section>
+
+          <aside class="rounded-3xl border border-white/10 bg-slate-900 p-5">
+            <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Klantdetail</div>
+            <h2 id="detail-name" class="mt-2 text-2xl font-semibold">Smurfit Westrock Grootbijgaarden</h2>
+            <p id="detail-city" class="mt-1 text-sm text-slate-300">Grootbijgaarden</p>
+
+            <div class="mt-5 grid gap-3 sm:grid-cols-2">
+              <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
+                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Status</div>
+                <div id="detail-status" class="mt-2 text-base font-medium">Rood</div>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
+                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Type</div>
+                <div id="detail-type" class="mt-2 text-base font-medium">Robotics</div>
+              </div>
+            </div>
+
+            <div class="mt-5 flex flex-wrap gap-2">
+              <button class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">Open in Waze</button>
+              <button class="rounded-2xl border border-white/10 px-4 py-2 text-sm">Service</button>
+            </div>
+
+            <div class="mt-6 rounded-2xl border border-white/10 bg-slate-800/70 p-4">
+              <div class="mb-2 text-sm font-semibold">Teststatus</div>
+              <p class="text-sm text-slate-300">
+                Als je dit ziet, werkt de site goed en is het witte scherm opgelost.
+              </p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const markers = document.querySelectorAll(".marker");
+      const detailName = document.getElementById("detail-name");
+      const detailCity = document.getElementById("detail-city");
+      const detailStatus = document.getElementById("detail-status");
+      const detailType = document.getElementById("detail-type");
+      const search = document.getElementById("search");
+
+      markers.forEach((marker) => {
+        marker.addEventListener("click", () => {
+          detailName.textContent = marker.dataset.name;
+          detailCity.textContent = marker.dataset.city;
+          detailStatus.textContent = marker.dataset.status;
+          detailType.textContent = marker.dataset.type;
+        });
+      });
+
+      search.addEventListener("input", () => {
+        const q = search.value.toLowerCase();
+        markers.forEach((marker) => {
+          const txt = (marker.dataset.name + " " + marker.dataset.city).toLowerCase();
+          marker.style.display = txt.includes(q) ? "flex" : "none";
+        });
+      });
+    </script>
   </body>
 </html>
