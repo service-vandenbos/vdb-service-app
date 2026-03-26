@@ -311,30 +311,45 @@
       }
 
       function renderCustomer(key) {
-        const c = customers[key];
-        currentCustomerKey = key;
+  const c = customers[key];
+  currentCustomerKey = key;
 
-        detailName.textContent = c.name;
-        detailCity.textContent = c.city;
-        detailStatus.textContent = c.status;
-        detailCount.textContent = c.robotics.length + c.cm.length;
-        wazeLink.href = `https://waze.com/ul?ll=${c.lat},${c.lng}&navigate=yes`;
+  detailName.textContent = c.name;
+  detailCity.textContent = c.city;
+  detailStatus.textContent = c.status;
+  detailCount.textContent = c.robotics.length + c.cm.length;
+  wazeLink.href = `https://waze.com/ul?ll=${c.lat},${c.lng}&navigate=yes`;
 
-        roboticsList.innerHTML = c.robotics.length
-          ? c.robotics.map((m) => machineCard(m, "Robotics")).join("")
-          : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen robotics machines</div>`;
+  roboticsList.innerHTML = c.robotics.length
+    ? c.robotics.map((m) => machineCard(m, "Robotics")).join("")
+    : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen robotics machines</div>`;
 
-        cmList.innerHTML = c.cm.length
-          ? c.cm.map((m) => machineCard(m, "CM")).join("")
-          : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen CM machines</div>`;
+  cmList.innerHTML = c.cm.length
+    ? c.cm.map((m) => machineCard(m, "CM")).join("")
+    : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen CM machines</div>`;
 
-        document.querySelectorAll(".service-machine").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            currentMachineName = btn.dataset.machine;
-            modalTitle.textContent = `Service registreren - ${btn.dataset.machine}`;
-            openModal();
-          });
-        });
+  document.querySelectorAll(".service-machine").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      currentMachineName = btn.dataset.machine;
+      modalTitle.textContent = `Service registreren - ${btn.dataset.machine}`;
+      openModal();
+    });
+  });
+
+  // kaartmarker kleur updaten
+  const marker = document.querySelector(`.marker[data-key="${key}"]`);
+  if (marker) {
+    marker.classList.remove("bg-red-500", "bg-amber-500", "bg-emerald-500");
+    if (c.status === "Rood") {
+      marker.classList.add("bg-red-500");
+    } else if (c.status === "Oranje") {
+      marker.classList.add("bg-amber-500");
+    } else {
+      marker.classList.add("bg-emerald-500");
+    }
+    marker.dataset.status = c.status;
+  }
+}
       }
 
       markers.forEach((marker) => {
