@@ -18,19 +18,19 @@
         <div class="mb-6 grid gap-4 md:grid-cols-4">
           <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-sm text-slate-300">Locaties</div>
-            <div class="mt-2 text-3xl font-semibold">6</div>
+            <div id="metric-locaties" class="mt-2 text-3xl font-semibold">0</div>
           </div>
           <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-sm text-slate-300">Machines</div>
-            <div class="mt-2 text-3xl font-semibold">12</div>
+            <div id="metric-machines" class="mt-2 text-3xl font-semibold">0</div>
           </div>
           <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-sm text-slate-300">Rood</div>
-            <div class="mt-2 text-3xl font-semibold text-red-400">4</div>
+            <div id="metric-rood" class="mt-2 text-3xl font-semibold text-red-400">0</div>
           </div>
           <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-sm text-slate-300">Oranje</div>
-            <div class="mt-2 text-3xl font-semibold text-amber-400">3</div>
+            <div id="metric-oranje" class="mt-2 text-3xl font-semibold text-amber-400">0</div>
           </div>
         </div>
 
@@ -55,88 +55,35 @@
                 <div class="absolute left-[42%] top-[25%] h-[33%] w-[21%] rounded-[44%] border border-cyan-200/15"></div>
               </div>
 
-              <button
-                data-key="smurfit"
-                data-name="Smurfit Westrock Grootbijgaarden"
-                data-city="Grootbijgaarden"
-                data-status="Rood"
-                data-lat="50.871"
-                data-lng="4.256"
-                class="marker absolute left-[41%] top-[38%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-xl"
-              >🤖</button>
-
-              <button
-                data-key="bentheim"
-                data-name="Model Bentheim"
-                data-city="Bad Bentheim"
-                data-status="Rood"
-                data-lat="52.3168"
-                data-lng="7.1667"
-                class="marker absolute left-[48%] top-[30%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-xl"
-              >🤖</button>
-
-              <button
-                data-key="drei"
-                data-name="Drei V"
-                data-city="München"
-                data-status="Oranje"
-                data-lat="48.1565"
-                data-lng="11.7583"
-                class="marker absolute left-[63%] top-[58%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-amber-500 text-lg shadow-xl"
-              >🤖</button>
-
-              <button
-                data-key="boxline"
-                data-name="Boxline"
-                data-city="Merksplas"
-                data-status="Rood"
-                data-lat="51.3635"
-                data-lng="4.8433"
-                class="marker absolute left-[43%] top-[35%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-xl"
-              >🤖</button>
-
-              <button
-                data-key="smart"
-                data-name="Smart Packaging"
-                data-city="Oosterhout"
-                data-status="Oranje"
-                data-lat="51.6347"
-                data-lng="4.9012"
-                class="marker absolute left-[44%] top-[33%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-amber-500 text-lg shadow-xl"
-              >🤖</button>
-
-              <button
-                data-key="fulda"
-                data-name="DS Smith Packaging Fulda"
-                data-city="Fulda"
-                data-status="Rood"
-                data-lat="50.5401"
-                data-lng="9.6974"
-                class="marker absolute left-[55%] top-[40%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-xl"
-              >🤖</button>
+              <button data-key="smurfit" class="marker absolute left-[41%] top-[38%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white text-lg shadow-xl">🤖</button>
+              <button data-key="bentheim" class="marker absolute left-[48%] top-[30%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white text-lg shadow-xl">🤖</button>
+              <button data-key="drei" class="marker absolute left-[63%] top-[58%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white text-lg shadow-xl">🤖</button>
+              <button data-key="boxline" class="marker absolute left-[43%] top-[35%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white text-lg shadow-xl">🤖</button>
+              <button data-key="smart" class="marker absolute left-[44%] top-[33%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white text-lg shadow-xl">🤖</button>
+              <button data-key="fulda" class="marker absolute left-[55%] top-[40%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white text-lg shadow-xl">🤖</button>
             </div>
           </section>
 
           <aside class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Klantdetail</div>
-            <h2 id="detail-name" class="mt-2 text-2xl font-semibold">Smurfit Westrock Grootbijgaarden</h2>
-            <p id="detail-city" class="mt-1 text-sm text-slate-300">Grootbijgaarden</p>
+            <h2 id="detail-name" class="mt-2 text-2xl font-semibold"></h2>
+            <p id="detail-city" class="mt-1 text-sm text-slate-300"></p>
 
             <div class="mt-5 grid gap-3 sm:grid-cols-2">
               <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
                 <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Status</div>
-                <div id="detail-status" class="mt-2 text-base font-medium">Rood</div>
+                <div id="detail-status" class="mt-2 text-base font-medium"></div>
               </div>
               <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
                 <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Machines</div>
-                <div id="detail-count" class="mt-2 text-base font-medium">2</div>
+                <div id="detail-count" class="mt-2 text-base font-medium"></div>
               </div>
             </div>
 
             <div class="mt-5 flex flex-wrap gap-2">
               <a
                 id="waze-link"
-                href="https://waze.com/ul?ll=50.871,4.256&navigate=yes"
+                href="#"
                 target="_blank"
                 rel="noreferrer"
                 class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950"
@@ -157,10 +104,7 @@
       </div>
     </div>
 
-    <div
-      id="service-modal"
-      class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4"
-    >
+    <div id="service-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
       <div class="w-full max-w-lg rounded-3xl border border-white/10 bg-slate-900 p-6">
         <div class="flex items-center justify-between">
           <div>
@@ -194,7 +138,6 @@
         smurfit: {
           name: "Smurfit Westrock Grootbijgaarden",
           city: "Grootbijgaarden",
-          status: "Rood",
           lat: "50.871",
           lng: "4.256",
           robotics: [
@@ -206,7 +149,6 @@
         bentheim: {
           name: "Model Bentheim",
           city: "Bad Bentheim",
-          status: "Rood",
           lat: "52.3168",
           lng: "7.1667",
           robotics: [
@@ -218,7 +160,6 @@
         drei: {
           name: "Drei V",
           city: "München",
-          status: "Oranje",
           lat: "48.1565",
           lng: "11.7583",
           robotics: [
@@ -233,7 +174,6 @@
         boxline: {
           name: "Boxline",
           city: "Merksplas",
-          status: "Rood",
           lat: "51.3635",
           lng: "4.8433",
           robotics: [
@@ -247,7 +187,6 @@
         smart: {
           name: "Smart Packaging",
           city: "Oosterhout",
-          status: "Oranje",
           lat: "51.6347",
           lng: "4.9012",
           robotics: [
@@ -258,7 +197,6 @@
         fulda: {
           name: "DS Smith Packaging Fulda",
           city: "Fulda",
-          status: "Rood",
           lat: "50.5401",
           lng: "9.6974",
           robotics: [
@@ -280,6 +218,11 @@
       const search = document.getElementById("search");
       const wazeLink = document.getElementById("waze-link");
 
+      const metricLocaties = document.getElementById("metric-locaties");
+      const metricMachines = document.getElementById("metric-machines");
+      const metricRood = document.getElementById("metric-rood");
+      const metricOranje = document.getElementById("metric-oranje");
+
       const modal = document.getElementById("service-modal");
       const closeModalTop = document.getElementById("close-modal-top");
       const closeModalBottom = document.getElementById("close-modal-bottom");
@@ -288,6 +231,52 @@
 
       let currentCustomerKey = "smurfit";
       let currentMachineName = "";
+      let currentMachineType = "";
+
+      function getCustomerStatus(customer) {
+        const all = [...customer.robotics, ...customer.cm];
+        if (all.some((m) => m.status === "Rood")) return "Rood";
+        if (all.some((m) => m.status === "Oranje")) return "Oranje";
+        return "Groen";
+      }
+
+      function updateMetrics() {
+        const keys = Object.keys(customers);
+        let machines = 0;
+        let rood = 0;
+        let oranje = 0;
+
+        keys.forEach((key) => {
+          const c = customers[key];
+          const all = [...c.robotics, ...c.cm];
+          machines += all.length;
+          all.forEach((m) => {
+            if (m.status === "Rood") rood++;
+            if (m.status === "Oranje") oranje++;
+          });
+        });
+
+        metricLocaties.textContent = keys.length;
+        metricMachines.textContent = machines;
+        metricRood.textContent = rood;
+        metricOranje.textContent = oranje;
+      }
+
+      function markerColorClass(status) {
+        if (status === "Rood") return "bg-red-500";
+        if (status === "Oranje") return "bg-amber-500";
+        return "bg-emerald-500";
+      }
+
+      function statusPill(status) {
+        const cls = status === "Rood"
+          ? "bg-red-500/20 text-red-100"
+          : status === "Oranje"
+            ? "bg-amber-500/20 text-amber-100"
+            : "bg-emerald-500/20 text-emerald-100";
+
+        return `<span class="rounded-full px-3 py-1 text-xs font-semibold ${cls}">${status}</span>`;
+      }
 
       function machineCard(machine, type) {
         return `
@@ -297,7 +286,7 @@
                 <div class="font-medium">${machine.name}</div>
                 <div class="mt-1 text-sm text-slate-300">Laatste service: ${machine.lastService}</div>
               </div>
-              <span class="rounded-full px-3 py-1 text-xs font-semibold ${machine.status === "Rood" ? "bg-red-500/20 text-red-100" : machine.status === "Oranje" ? "bg-amber-500/20 text-amber-100" : "bg-emerald-500/20 text-emerald-100"}">${machine.status}</span>
+              ${statusPill(machine.status)}
             </div>
             <div class="mt-4">
               <button
@@ -310,61 +299,53 @@
         `;
       }
 
-      function renderCustomer(key) {
-  const c = customers[key];
-  currentCustomerKey = key;
+      function renderMarkers() {
+        markers.forEach((marker) => {
+          const key = marker.dataset.key;
+          const customer = customers[key];
+          const status = getCustomerStatus(customer);
 
-  detailName.textContent = c.name;
-  detailCity.textContent = c.city;
-  detailStatus.textContent = c.status;
-  detailCount.textContent = c.robotics.length + c.cm.length;
-  wazeLink.href = `https://waze.com/ul?ll=${c.lat},${c.lng}&navigate=yes`;
-
-  roboticsList.innerHTML = c.robotics.length
-    ? c.robotics.map((m) => machineCard(m, "Robotics")).join("")
-    : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen robotics machines</div>`;
-
-  cmList.innerHTML = c.cm.length
-    ? c.cm.map((m) => machineCard(m, "CM")).join("")
-    : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen CM machines</div>`;
-
-  document.querySelectorAll(".service-machine").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      currentMachineName = btn.dataset.machine;
-      modalTitle.textContent = `Service registreren - ${btn.dataset.machine}`;
-      openModal();
-    });
-  });
-
-  // kaartmarker kleur updaten
-   const marker = document.querySelector(`.marker[data-key="${key}"]`);
-  if (marker) {
-    marker.classList.remove("bg-red-500", "bg-amber-500", "bg-emerald-500");
-    if (c.status === "Rood") {
-      marker.classList.add("bg-red-500");
-    } else if (c.status === "Oranje") {
-      marker.classList.add("bg-amber-500");
-    } else {
-      marker.classList.add("bg-emerald-500");
-    }
-    marker.dataset.status = c.status;
-  }
-}
+          marker.classList.remove("bg-red-500", "bg-amber-500", "bg-emerald-500");
+          marker.classList.add(markerColorClass(status));
+          marker.dataset.name = customer.name;
+          marker.dataset.city = customer.city;
+          marker.dataset.status = status;
+        });
       }
 
-      markers.forEach((marker) => {
-        marker.addEventListener("click", () => {
-          renderCustomer(marker.dataset.key);
+      function bindMachineButtons() {
+        document.querySelectorAll(".service-machine").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            currentMachineName = btn.dataset.machine;
+            currentMachineType = btn.dataset.type;
+            modalTitle.textContent = `Service registreren - ${btn.dataset.machine}`;
+            openModal();
+          });
         });
-      });
+      }
 
-      search.addEventListener("input", () => {
-        const q = search.value.toLowerCase();
-        markers.forEach((marker) => {
-          const txt = (marker.dataset.name + " " + marker.dataset.city).toLowerCase();
-          marker.style.display = txt.includes(q) ? "flex" : "none";
-        });
-      });
+      function renderCustomer(key) {
+        const c = customers[key];
+        currentCustomerKey = key;
+
+        detailName.textContent = c.name;
+        detailCity.textContent = c.city;
+        detailStatus.textContent = getCustomerStatus(c);
+        detailCount.textContent = c.robotics.length + c.cm.length;
+        wazeLink.href = `https://waze.com/ul?ll=${c.lat},${c.lng}&navigate=yes`;
+
+        roboticsList.innerHTML = c.robotics.length
+          ? c.robotics.map((m) => machineCard(m, "Robotics")).join("")
+          : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen robotics machines</div>`;
+
+        cmList.innerHTML = c.cm.length
+          ? c.cm.map((m) => machineCard(m, "CM")).join("")
+          : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen CM machines</div>`;
+
+        bindMachineButtons();
+        renderMarkers();
+        updateMetrics();
+      }
 
       function openModal() {
         modal.classList.remove("hidden");
@@ -376,40 +357,38 @@
         modal.classList.remove("flex");
       }
 
+      function saveCurrentMachine() {
+        const c = customers[currentCustomerKey];
+        const list = currentMachineType === "CM" ? c.cm : c.robotics;
+
+        const idx = list.findIndex((m) => m.name === currentMachineName);
+        if (idx !== -1) {
+          list[idx].lastService = "03-2026";
+          list[idx].status = "Groen";
+        }
+
+        renderCustomer(currentCustomerKey);
+        closeModal();
+      }
+
+      markers.forEach((marker) => {
+        marker.addEventListener("click", () => {
+          renderCustomer(marker.dataset.key);
+        });
+      });
+
+      search.addEventListener("input", () => {
+        const q = search.value.toLowerCase();
+        markers.forEach((marker) => {
+          const c = customers[marker.dataset.key];
+          const txt = `${c.name} ${c.city}`.toLowerCase();
+          marker.style.display = txt.includes(q) ? "flex" : "none";
+        });
+      });
+
       closeModalTop.addEventListener("click", closeModal);
       closeModalBottom.addEventListener("click", closeModal);
-
-     saveService.addEventListener("click", () => {
-  const c = customers[currentCustomerKey];
-
-  function updateMachine(list) {
-    return list.map((machine) => {
-      if (machine.name === currentMachineName) {
-        return {
-          ...machine,
-          lastService: "03-2026",
-          status: "Groen"
-        };
-      }
-      return machine;
-    });
-  }
-
-  c.robotics = updateMachine(c.robotics);
-  c.cm = updateMachine(c.cm);
-
-  let allMachines = [...c.robotics, ...c.cm];
-  if (allMachines.some((m) => m.status === "Rood")) {
-    c.status = "Rood";
-  } else if (allMachines.some((m) => m.status === "Oranje")) {
-    c.status = "Oranje";
-  } else {
-    c.status = "Groen";
-  }
-
-  renderCustomer(currentCustomerKey);
-  closeModal();
-});
+      saveService.addEventListener("click", saveCurrentMachine);
 
       modal.addEventListener("click", (e) => {
         if (e.target === modal) closeModal();
