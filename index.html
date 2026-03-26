@@ -55,12 +55,65 @@
                 <div class="absolute left-[42%] top-[25%] h-[33%] w-[21%] rounded-[44%] border border-cyan-200/15"></div>
               </div>
 
-              <button data-name="Smurfit Westrock Grootbijgaarden" data-city="Grootbijgaarden" data-status="Rood" data-type="Robotics" class="marker absolute left-[41%] top-[38%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-xl">🤖</button>
-              <button data-name="Model Bentheim" data-city="Bad Bentheim" data-status="Rood" data-type="Robotics" class="marker absolute left-[48%] top-[30%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-xl">🤖</button>
-              <button data-name="Drei V" data-city="München" data-status="Oranje" data-type="Robotics + CM" class="marker absolute left-[63%] top-[58%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-amber-500 text-lg shadow-xl">🤖</button>
-              <button data-name="Boxline" data-city="Merksplas" data-status="Rood" data-type="Robotics + CM" class="marker absolute left-[43%] top-[35%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-xl">🤖</button>
-              <button data-name="Smart Packaging" data-city="Oosterhout" data-status="Oranje" data-type="Robotics" class="marker absolute left-[44%] top-[33%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-amber-500 text-lg shadow-xl">🤖</button>
-              <button data-name="DS Smith Packaging Fulda" data-city="Fulda" data-status="Rood" data-type="Robotics + CM" class="marker absolute left-[55%] top-[40%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-xl">🤖</button>
+              <button
+                data-name="Smurfit Westrock Grootbijgaarden"
+                data-city="Grootbijgaarden"
+                data-status="Rood"
+                data-type="Robotics"
+                data-lat="50.871"
+                data-lng="4.256"
+                class="marker absolute left-[41%] top-[38%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-xl"
+              >🤖</button>
+
+              <button
+                data-name="Model Bentheim"
+                data-city="Bad Bentheim"
+                data-status="Rood"
+                data-type="Robotics"
+                data-lat="52.3168"
+                data-lng="7.1667"
+                class="marker absolute left-[48%] top-[30%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-xl"
+              >🤖</button>
+
+              <button
+                data-name="Drei V"
+                data-city="München"
+                data-status="Oranje"
+                data-type="Robotics + CM"
+                data-lat="48.1565"
+                data-lng="11.7583"
+                class="marker absolute left-[63%] top-[58%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-amber-500 text-lg shadow-xl"
+              >🤖</button>
+
+              <button
+                data-name="Boxline"
+                data-city="Merksplas"
+                data-status="Rood"
+                data-type="Robotics + CM"
+                data-lat="51.3635"
+                data-lng="4.8433"
+                class="marker absolute left-[43%] top-[35%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-xl"
+              >🤖</button>
+
+              <button
+                data-name="Smart Packaging"
+                data-city="Oosterhout"
+                data-status="Oranje"
+                data-type="Robotics"
+                data-lat="51.6347"
+                data-lng="4.9012"
+                class="marker absolute left-[44%] top-[33%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-amber-500 text-lg shadow-xl"
+              >🤖</button>
+
+              <button
+                data-name="DS Smith Packaging Fulda"
+                data-city="Fulda"
+                data-status="Rood"
+                data-type="Robotics + CM"
+                data-lat="50.5401"
+                data-lng="9.6974"
+                class="marker absolute left-[55%] top-[40%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-xl"
+              >🤖</button>
             </div>
           </section>
 
@@ -81,8 +134,18 @@
             </div>
 
             <div class="mt-5 flex flex-wrap gap-2">
-              <button class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">Open in Waze</button>
-              <button class="rounded-2xl border border-white/10 px-4 py-2 text-sm">Service</button>
+              <a
+                id="waze-link"
+                href="https://waze.com/ul?ll=50.871,4.256&navigate=yes"
+                target="_blank"
+                rel="noreferrer"
+                class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950"
+              >Open in Waze</a>
+
+              <button
+                id="service-btn"
+                class="rounded-2xl border border-white/10 px-4 py-2 text-sm"
+              >Service</button>
             </div>
 
             <div class="mt-6 rounded-2xl border border-white/10 bg-slate-800/70 p-4">
@@ -96,6 +159,39 @@
       </div>
     </div>
 
+    <!-- Popup -->
+    <div
+      id="service-modal"
+      class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4"
+    >
+      <div class="w-full max-w-lg rounded-3xl border border-white/10 bg-slate-900 p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Service</div>
+            <h3 id="modal-title" class="mt-2 text-2xl font-semibold">Service registreren</h3>
+          </div>
+          <button id="close-modal-top" class="rounded-xl border border-white/10 px-3 py-2 text-sm">Sluiten</button>
+        </div>
+
+        <div class="mt-5 grid gap-4">
+          <label class="block">
+            <div class="mb-2 text-sm text-slate-300">Monteur</div>
+            <input id="engineer" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm" value="Hoofdmonteur" />
+          </label>
+
+          <label class="block">
+            <div class="mb-2 text-sm text-slate-300">Notitie</div>
+            <textarea id="service-note" rows="4" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm" placeholder="Bijvoorbeeld: klant wilde alleen onderhoud aan robot 1"></textarea>
+          </label>
+        </div>
+
+        <div class="mt-5 flex flex-wrap justify-end gap-2">
+          <button id="close-modal-bottom" class="rounded-2xl border border-white/10 px-4 py-2 text-sm">Annuleren</button>
+          <button id="save-service" class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">Opslaan</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       const markers = document.querySelectorAll(".marker");
       const detailName = document.getElementById("detail-name");
@@ -103,13 +199,44 @@
       const detailStatus = document.getElementById("detail-status");
       const detailType = document.getElementById("detail-type");
       const search = document.getElementById("search");
+      const wazeLink = document.getElementById("waze-link");
+
+      const modal = document.getElementById("service-modal");
+      const serviceBtn = document.getElementById("service-btn");
+      const closeModalTop = document.getElementById("close-modal-top");
+      const closeModalBottom = document.getElementById("close-modal-bottom");
+      const saveService = document.getElementById("save-service");
+      const modalTitle = document.getElementById("modal-title");
+
+      let currentCustomer = {
+        name: "Smurfit Westrock Grootbijgaarden",
+        city: "Grootbijgaarden",
+        status: "Rood",
+        type: "Robotics",
+        lat: "50.871",
+        lng: "4.256"
+      };
+
+      function setCustomer(data) {
+        currentCustomer = data;
+        detailName.textContent = data.name;
+        detailCity.textContent = data.city;
+        detailStatus.textContent = data.status;
+        detailType.textContent = data.type;
+        wazeLink.href = `https://waze.com/ul?ll=${data.lat},${data.lng}&navigate=yes`;
+        modalTitle.textContent = `Service registreren - ${data.name}`;
+      }
 
       markers.forEach((marker) => {
         marker.addEventListener("click", () => {
-          detailName.textContent = marker.dataset.name;
-          detailCity.textContent = marker.dataset.city;
-          detailStatus.textContent = marker.dataset.status;
-          detailType.textContent = marker.dataset.type;
+          setCustomer({
+            name: marker.dataset.name,
+            city: marker.dataset.city,
+            status: marker.dataset.status,
+            type: marker.dataset.type,
+            lat: marker.dataset.lat,
+            lng: marker.dataset.lng
+          });
         });
       });
 
@@ -119,6 +246,29 @@
           const txt = (marker.dataset.name + " " + marker.dataset.city).toLowerCase();
           marker.style.display = txt.includes(q) ? "flex" : "none";
         });
+      });
+
+      function openModal() {
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      }
+
+      function closeModal() {
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      }
+
+      serviceBtn.addEventListener("click", openModal);
+      closeModalTop.addEventListener("click", closeModal);
+      closeModalBottom.addEventListener("click", closeModal);
+
+      saveService.addEventListener("click", () => {
+        alert(`Service opgeslagen voor ${currentCustomer.name}`);
+        closeModal();
+      });
+
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeModal();
       });
     </script>
   </body>
