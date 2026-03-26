@@ -55,36 +55,41 @@
                 <div class="absolute left-[42%] top-[25%] h-[33%] w-[21%] rounded-[44%] border border-cyan-200/15"></div>
               </div>
 
-              <button data-key="smurfit" class="marker ...">
-  <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
-  VDB
-</div>
-</button>
-              <button data-key="bentheim" class="marker ...">
- <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
-  VDB
-</div>
-</button>
-             <button data-key="drei" class="marker ...">
-  <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
-  VDB
-</div>
-</button>
-              <button data-key="boxline" class="marker ...">
-  <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
-  VDB
-</div>
-</button>
-              <button data-key="smart" class="marker ...">
-  <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
-  VDB
-</div>
-</button>
-              <button data-key="fulda" class="marker ...">
-  <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
-  VDB
-</div>
-</button>
+              <button data-key="smurfit" class="marker absolute left-[41%] top-[38%] -translate-x-1/2 -translate-y-1/2">
+                <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
+                  VDB
+                </div>
+              </button>
+
+              <button data-key="bentheim" class="marker absolute left-[48%] top-[30%] -translate-x-1/2 -translate-y-1/2">
+                <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
+                  VDB
+                </div>
+              </button>
+
+              <button data-key="drei" class="marker absolute left-[63%] top-[58%] -translate-x-1/2 -translate-y-1/2">
+                <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
+                  VDB
+                </div>
+              </button>
+
+              <button data-key="boxline" class="marker absolute left-[43%] top-[35%] -translate-x-1/2 -translate-y-1/2">
+                <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
+                  VDB
+                </div>
+              </button>
+
+              <button data-key="smart" class="marker absolute left-[44%] top-[33%] -translate-x-1/2 -translate-y-1/2">
+                <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
+                  VDB
+                </div>
+              </button>
+
+              <button data-key="fulda" class="marker absolute left-[55%] top-[40%] -translate-x-1/2 -translate-y-1/2">
+                <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg">
+                  VDB
+                </div>
+              </button>
             </div>
           </section>
 
@@ -288,7 +293,7 @@
 
       function markerColorClass(status) {
         if (status === "Rood") return "bg-red-500";
-        if (status === "Oranje") return "bg-amber-500";
+        if (status === "Oranje") return "bg-amber-400";
         return "bg-emerald-500";
       }
 
@@ -328,9 +333,13 @@
           const key = marker.dataset.key;
           const customer = customers[key];
           const status = getCustomerStatus(customer);
+          const badge = marker.querySelector(".marker-badge");
 
-          marker.classList.remove("bg-red-500", "bg-amber-500", "bg-emerald-500");
-          marker.classList.add(markerColorClass(status));
+          if (badge) {
+            badge.classList.remove("bg-red-500", "bg-amber-400", "bg-emerald-500");
+            badge.classList.add(markerColorClass(status));
+          }
+
           marker.dataset.name = customer.name;
           marker.dataset.city = customer.city;
           marker.dataset.status = status;
