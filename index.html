@@ -344,7 +344,46 @@
       }
 
       async function saveCurrentMachine() {
-        if (!currentMachineId) return;
+  if (!currentMachineId) return;
+
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const year = now.getFullYear();
+  const value = `${month}-${year}`;
+
+  const { error } = await supabaseClient
+    .from("machines")
+    .update({ last_service: value })
+    .eq("id", currentMachineId);
+
+  if (error) {
+    alert("Fout bij opslaan");
+    console.error(error);
+    return;
+  }
+
+  // direct lokaal ook aanpassen
+  const customer = customers[currentCustomerKey];
+  if (customer) {
+    const allLists = [customer.robotics, customer.cm];
+
+    allLists.forEach((list) => {
+      list.forEach((machine) => {
+        if (machine.id === currentMachineId) {
+          machine.lastService = value;
+          machine.status = "Groen";
+        }
+      });
+    });
+  }
+
+  closeModal();
+  renderCustomer(currentCustomerKey);
+  renderMarkers(getFilteredKeys());
+  updateMetrics();
+
+  alert("Service opgeslagen");
+}
 
         const now = new Date();
         const month = String(now.getMonth() + 1).padStart(2, "0");
