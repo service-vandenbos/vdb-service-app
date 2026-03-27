@@ -471,6 +471,44 @@
       }
 
       function renderCustomer(key) {
+  const c = customers[key];
+  if (!c) return;
+
+  currentCustomerKey = key;
+
+  // 🔥 HARDCODED correcte opbouw
+  const street = (c.address || "").trim();
+  const postcode = (c.postcode || "").trim();
+  const city = (c.city || "").trim();
+  const country = (c.country || "").trim();
+
+  const fullAddress = `${street}, ${postcode} ${city}, ${country}`;
+
+  // UI
+  detailName.textContent = c.name;
+  detailCity.textContent = city;
+  detailAddress.textContent = street ? fullAddress : "";
+
+  detailStatus.textContent = getCustomerStatus(c);
+  detailCount.textContent = c.robotics.length + c.cm.length;
+
+  // 🔥 Maps altijd correct
+  const mapsQuery = `${c.name}, ${fullAddress}`;
+
+  mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`;
+
+  roboticsList.innerHTML = c.robotics.length
+    ? c.robotics.map((m) => machineCard(m)).join("")
+    : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen robotics machines</div>`;
+
+  cmList.innerHTML = c.cm.length
+    ? c.cm.map((m) => machineCard(m)).join("")
+    : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen CM machines</div>`;
+
+  bindMachineButtons();
+  updateMetrics();
+  renderMarkers(getFilteredKeys());
+}
         const c = customers[key];
         if (!c) return;
 
