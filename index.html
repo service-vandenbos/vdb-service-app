@@ -12,7 +12,6 @@
     <div class="min-h-screen p-6">
       <div class="mx-auto max-w-7xl">
 
-        <!-- HEADER -->
         <div class="mb-6 rounded-[28px] border border-white/10 bg-slate-900 px-8 py-7">
           <div class="flex flex-col gap-3">
             <div class="text-xs uppercase tracking-[0.45em] text-cyan-300">
@@ -30,10 +29,8 @@
           </div>
         </div>
 
-        <!-- STATUS BAR -->
         <div id="status-bar" class="mb-6 hidden rounded-2xl border px-4 py-3 text-sm"></div>
 
-        <!-- METRICS -->
         <div class="mb-6 grid gap-4 md:grid-cols-4">
           <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-sm text-slate-300">Locaties</div>
@@ -56,10 +53,8 @@
           </div>
         </div>
 
-        <!-- MAIN -->
         <div class="grid gap-6 xl:grid-cols-[1.2fr_0.95fr]">
 
-          <!-- MAP -->
           <section class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
@@ -87,12 +82,12 @@
             </div>
           </section>
 
-          <!-- DETAIL -->
           <aside class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Klantdetail</div>
 
             <h2 id="detail-name" class="mt-2 text-2xl font-semibold">Laden...</h2>
             <p id="detail-city" class="mt-1 text-sm text-slate-300"></p>
+            <p id="detail-address" class="mt-1 text-sm text-slate-400"></p>
 
             <div class="mt-5 grid gap-3 sm:grid-cols-2">
               <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
@@ -114,7 +109,7 @@
                 rel="noreferrer"
                 class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950"
               >
-                Open in Waze
+                Waze naar klant
               </a>
 
               <a
@@ -142,7 +137,6 @@
       </div>
     </div>
 
-    <!-- SERVICE MODAL -->
     <div id="service-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
       <div class="w-full max-w-lg rounded-3xl border border-white/10 bg-slate-900 p-6">
         <div class="flex items-center justify-between">
@@ -188,7 +182,6 @@
       </div>
     </div>
 
-    <!-- HISTORY MODAL -->
     <div id="history-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
       <div class="w-full max-w-2xl rounded-3xl border border-white/10 bg-slate-900 p-6">
         <div class="flex items-center justify-between">
@@ -217,13 +210,13 @@
       const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidG9hZXJhZXZ1eWdhanlhZ2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MDUyNzksImV4cCI6MjA5MDA4MTI3OX0.D8gKf3hIwQnP8GULWgN2pINrttdR_oUc_WSK50SQl9c";
       const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      const VDB_LAT = 52.3569;
-      const VDB_LNG = 6.6619;
+      const VDB_ADDRESS = "Bedrijvenpark Twente Noord 89, 7602 KS Almelo, Nederland";
 
       const statusBar = document.getElementById("status-bar");
       const mapArea = document.getElementById("map-area");
       const detailName = document.getElementById("detail-name");
       const detailCity = document.getElementById("detail-city");
+      const detailAddress = document.getElementById("detail-address");
       const detailStatus = document.getElementById("detail-status");
       const detailCount = document.getElementById("detail-count");
       const roboticsList = document.getElementById("robotics-list");
@@ -322,7 +315,7 @@
         return `<span class="rounded-full px-3 py-1 text-xs font-semibold ${cls}">${status}</span>`;
       }
 
-      function machineCard(machine, typeLabel) {
+      function machineCard(machine) {
         return `
           <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
             <div class="flex items-start justify-between gap-4">
@@ -363,12 +356,24 @@
           <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div class="font-medium">${month}</div>
-              <div class="text-xs text-slate-400">${event.created_at ? new Date(event.created_at).toLocaleString("nl-NL") : ""}</div>
+              <div class="text-xs text-slate-400">
+                ${event.created_at ? new Date(event.created_at).toLocaleString("nl-NL") : ""}
+              </div>
             </div>
             <div class="mt-2 text-sm text-slate-300">Monteur: ${engineer}</div>
             <div class="mt-2 text-sm text-slate-300">Notitie: ${note}</div>
           </div>
         `;
+      }
+
+      function buildCustomerAddress(customer) {
+        const parts = [
+          customer.address || "",
+          [customer.postcode || "", customer.city || ""].join(" ").trim(),
+          customer.country || ""
+        ].filter(Boolean);
+
+        return parts.join(", ");
       }
 
       function projectToEurope(lat, lng) {
@@ -408,7 +413,7 @@
 
         return Object.keys(customers).filter((key) => {
           const c = customers[key];
-          const txt = `${c.name} ${c.city}`.toLowerCase();
+          const txt = `${c.name} ${c.city} ${c.address || ""} ${c.postcode || ""}`.toLowerCase();
           return txt.includes(q);
         });
       }
@@ -462,20 +467,28 @@
 
         currentCustomerKey = key;
 
+        const customerAddress = buildCustomerAddress(c);
+
         detailName.textContent = c.name;
-        detailCity.textContent = c.city;
+        detailCity.textContent = c.city || "";
+        detailAddress.textContent = customerAddress || "";
         detailStatus.textContent = getCustomerStatus(c);
         detailCount.textContent = c.robotics.length + c.cm.length;
 
-        wazeLink.href = `https://waze.com/ul?ll=${c.lat},${c.lng}&navigate=yes`;
-        routeLink.href = `https://www.google.com/maps/dir/${VDB_LAT},${VDB_LNG}/${c.lat},${c.lng}`;
+        wazeLink.href = customerAddress
+          ? `https://waze.com/ul?q=${encodeURIComponent(customerAddress)}&navigate=yes`
+          : `https://waze.com/ul?ll=${c.lat},${c.lng}&navigate=yes`;
+
+        routeLink.href = customerAddress
+          ? `https://www.google.com/maps/dir/${encodeURIComponent(VDB_ADDRESS)}/${encodeURIComponent(customerAddress)}`
+          : `https://www.google.com/maps/dir/${encodeURIComponent(VDB_ADDRESS)}/${c.lat},${c.lng}`;
 
         roboticsList.innerHTML = c.robotics.length
-          ? c.robotics.map((m) => machineCard(m, "Robotics")).join("")
+          ? c.robotics.map((m) => machineCard(m)).join("")
           : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen robotics machines</div>`;
 
         cmList.innerHTML = c.cm.length
-          ? c.cm.map((m) => machineCard(m, "CM")).join("")
+          ? c.cm.map((m) => machineCard(m)).join("")
           : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen CM machines</div>`;
 
         bindMachineButtons();
@@ -592,7 +605,7 @@
 
         const { data: customerRows, error: customerError } = await supabaseClient
           .from("customers")
-          .select("id, name, city, latitude, longitude");
+          .select("id, name, city, address, postcode, country, latitude, longitude");
 
         if (customerError) {
           showStatus("Fout bij laden van customers", "error");
@@ -616,6 +629,9 @@
           customers[row.id] = {
             name: row.name || "Onbekend",
             city: row.city || "",
+            address: row.address || "",
+            postcode: row.postcode || "",
+            country: row.country || "",
             lat: row.latitude || 50,
             lng: row.longitude || 5,
             robotics: [],
