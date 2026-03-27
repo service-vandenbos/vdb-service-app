@@ -167,6 +167,8 @@
       const closeModalTop = document.getElementById("close-modal-top");
       const closeModalBottom = document.getElementById("close-modal-bottom");
       const saveServiceBtn = document.getElementById("save-service");
+      const engineerInput = document.getElementById("engineer");
+      const noteInput = document.getElementById("service-note");
 
       let customers = {};
       let currentCustomerKey = null;
@@ -174,7 +176,9 @@
       let currentMachineName = "";
 
       function showStatus(message, type = "info") {
-        statusBar.classList.remove("hidden", "border-red-500/30", "bg-red-500/10", "text-red-100", "border-cyan-500/30", "bg-cyan-500/10", "text-cyan-100", "border-emerald-500/30", "bg-emerald-500/10", "text-emerald-100");
+        statusBar.className = "mb-6 rounded-2xl border px-4 py-3 text-sm";
+        statusBar.classList.remove("hidden");
+
         if (type === "error") {
           statusBar.classList.add("border-red-500/30", "bg-red-500/10", "text-red-100");
         } else if (type === "success") {
@@ -182,6 +186,7 @@
         } else {
           statusBar.classList.add("border-cyan-500/30", "bg-cyan-500/10", "text-cyan-100");
         }
+
         statusBar.textContent = message;
       }
 
@@ -292,6 +297,7 @@
       function getFilteredKeys() {
         const q = search.value.trim().toLowerCase();
         if (!q) return Object.keys(customers);
+
         return Object.keys(customers).filter((key) => {
           const c = customers[key];
           const txt = `${c.name} ${c.city}`.toLowerCase();
@@ -361,65 +367,56 @@
         renderMarkers(getFilteredKeys());
       }
 
-      function closeModal() {
-  modal.classList.add("hidden");
-  modal.classList.remove("flex");
-
-  document.getElementById("engineer").value = "Hoofdmonteur";
-  document.getElementById("service-note").value = "";
-}
+      function openModal() {
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      }
 
       function closeModal() {
         modal.classList.add("hidden");
         modal.classList.remove("flex");
+        engineerInput.value = "Hoofdmonteur";
+        noteInput.value = "";
       }
 
-    async function saveCurrentMachine() {
-  if (!currentMachineId || !currentCustomerKey) return;
+      async function saveCurrentMachine() {
+        if (!currentMachineId || !currentCustomerKey) return;
 
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const year = now.getFullYear();
-  const value = `${month}-${year}`;
+        const now = new Date();
+        const month = String(now.getMonth() + 1).padStart(2, "0");
+        const year = now.getFullYear();
+        const value = `${month}-${year}`;
 
-  const { error } = await supabaseClient
-    .from("machines")
-    .update({ last_service: value })
-    .eq("id", currentMachineId);
+        const { error } = await supabaseClient
+          .from("machines")
+          .update({ last_service: value })
+          .eq("id", currentMachineId);
 
-  if (error) {
-    showStatus("Opslaan mislukt. Controleer Supabase of permissies.", "error");
-    console.error(error);
-    return;
-  }
+        if (error) {
+          showStatus("Opslaan mislukt", "error");
+          console.error(error);
+          return;
+        }
 
-  const customer = customers[currentCustomerKey];
-  if (customer) {
-    [...customer.robotics, ...customer.cm].forEach((machine) => {
-      if (machine.id === currentMachineId) {
-        machine.lastService = value;
-        machine.status = "Groen";
-      }
-    });
-  }
+        const customer = customers[currentCustomerKey];
+        if (customer) {
+          [...customer.robotics, ...customer.cm].forEach((machine) => {
+            if (machine.id === currentMachineId) {
+              machine.lastService = value;
+              machine.status = "Groen";
+            }
+          });
+        }
 
-  const savedMachineName = currentMachineName;
-
-  currentMachineId = null;
-  currentMachineName = "";
-
-  closeModal();
-  renderCustomer(currentCustomerKey);
-  renderMarkers(getFilteredKeys());
-  updateMetrics();
-  showStatus(`Service opgeslagen voor ${savedMachineName}`, "success");
-}
+        const savedName = currentMachineName;
+        currentMachineId = null;
+        currentMachineName = "";
 
         closeModal();
         renderCustomer(currentCustomerKey);
         renderMarkers(getFilteredKeys());
         updateMetrics();
-        showStatus(`Service opgeslagen voor ${currentMachineName}`, "success");
+        showStatus(`Service opgeslagen voor ${savedName}`, "success");
       }
 
       async function loadData() {
@@ -485,7 +482,7 @@
           showStatus("Data geladen", "success");
           setTimeout(hideStatus, 1500);
         } else {
-          showStatus("Geen klanten gevonden in Supabase", "error");
+          showStatus("Geen klanten gevonden", "error");
         }
       }
 
