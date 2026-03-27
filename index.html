@@ -361,44 +361,59 @@
         renderMarkers(getFilteredKeys());
       }
 
-      function openModal() {
-        modal.classList.remove("hidden");
-        modal.classList.add("flex");
-      }
+      function closeModal() {
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+
+  document.getElementById("engineer").value = "Hoofdmonteur";
+  document.getElementById("service-note").value = "";
+}
 
       function closeModal() {
         modal.classList.add("hidden");
         modal.classList.remove("flex");
       }
 
-      async function saveCurrentMachine() {
-        if (!currentMachineId || !currentCustomerKey) return;
+    async function saveCurrentMachine() {
+  if (!currentMachineId || !currentCustomerKey) return;
 
-        const now = new Date();
-        const month = String(now.getMonth() + 1).padStart(2, "0");
-        const year = now.getFullYear();
-        const value = `${month}-${year}`;
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const year = now.getFullYear();
+  const value = `${month}-${year}`;
 
-        const { error } = await supabaseClient
-          .from("machines")
-          .update({ last_service: value })
-          .eq("id", currentMachineId);
+  const { error } = await supabaseClient
+    .from("machines")
+    .update({ last_service: value })
+    .eq("id", currentMachineId);
 
-        if (error) {
-          showStatus("Opslaan mislukt. Controleer Supabase of permissies.", "error");
-          console.error(error);
-          return;
-        }
+  if (error) {
+    showStatus("Opslaan mislukt. Controleer Supabase of permissies.", "error");
+    console.error(error);
+    return;
+  }
 
-        const customer = customers[currentCustomerKey];
-        if (customer) {
-          [...customer.robotics, ...customer.cm].forEach((machine) => {
-            if (machine.id === currentMachineId) {
-              machine.lastService = value;
-              machine.status = "Groen";
-            }
-          });
-        }
+  const customer = customers[currentCustomerKey];
+  if (customer) {
+    [...customer.robotics, ...customer.cm].forEach((machine) => {
+      if (machine.id === currentMachineId) {
+        machine.lastService = value;
+        machine.status = "Groen";
+      }
+    });
+  }
+
+  const savedMachineName = currentMachineName;
+
+  currentMachineId = null;
+  currentMachineName = "";
+
+  closeModal();
+  renderCustomer(currentCustomerKey);
+  renderMarkers(getFilteredKeys());
+  updateMetrics();
+  showStatus(`Service opgeslagen voor ${savedMachineName}`, "success");
+}
 
         closeModal();
         renderCustomer(currentCustomerKey);
