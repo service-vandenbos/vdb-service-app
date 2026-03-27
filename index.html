@@ -11,8 +11,6 @@
   <body class="bg-slate-950 text-white">
     <div class="min-h-screen p-6">
       <div class="mx-auto max-w-7xl">
-
-        <!-- HEADER -->
         <div class="mb-6 rounded-[28px] border border-white/10 bg-slate-900 px-8 py-7">
           <div class="flex flex-col gap-3">
             <div class="text-xs uppercase tracking-[0.45em] text-cyan-300">
@@ -30,10 +28,8 @@
           </div>
         </div>
 
-        <!-- STATUS -->
         <div id="status-bar" class="mb-6 hidden rounded-2xl border px-4 py-3 text-sm"></div>
 
-        <!-- METRICS -->
         <div class="mb-6 grid gap-4 md:grid-cols-4">
           <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-sm text-slate-300">Locaties</div>
@@ -56,10 +52,7 @@
           </div>
         </div>
 
-        <!-- MAIN -->
         <div class="grid gap-6 xl:grid-cols-[1.2fr_0.95fr]">
-
-          <!-- MAP -->
           <section class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
@@ -87,7 +80,6 @@
             </div>
           </section>
 
-          <!-- DETAIL -->
           <aside class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Klantdetail</div>
 
@@ -358,13 +350,39 @@
       }
 
       function buildCustomerAddress(customer) {
-        const parts = [
-          customer.address || "",
-          [customer.postcode || "", customer.city || ""].join(" ").trim(),
-          customer.country || ""
-        ].filter(Boolean);
+        const street = (customer.address || "").trim();
+        const postcode = (customer.postcode || "").trim();
+        const city = (customer.city || "").trim();
+        const country = (customer.country || "").trim();
 
-        return parts.join(", ");
+        const line2 = [postcode, city].filter(Boolean).join(" ").trim();
+        return [street, line2, country].filter(Boolean).join(", ");
+      }
+
+      function buildMapsQuery(customer) {
+        const name = (customer.name || "").trim();
+        const street = (customer.address || "").trim();
+        const postcode = (customer.postcode || "").trim();
+        const city = (customer.city || "").trim();
+        const country = (customer.country || "").trim();
+
+        const fullAddress = [street, [postcode, city].filter(Boolean).join(" "), country]
+          .filter(Boolean)
+          .join(", ");
+
+        if (street) {
+          return [name, fullAddress].filter(Boolean).join(", ");
+        }
+
+        if (fullAddress) {
+          return fullAddress;
+        }
+
+        if (city) {
+          return [name, city, country].filter(Boolean).join(", ");
+        }
+
+        return `${customer.lat},${customer.lng}`;
       }
 
       function projectToEurope(lat, lng) {
@@ -458,16 +476,15 @@
 
         currentCustomerKey = key;
         const customerAddress = buildCustomerAddress(c);
+        const mapsQuery = buildMapsQuery(c);
 
         detailName.textContent = c.name;
         detailCity.textContent = c.city || "";
-        detailAddress.textContent = customerAddress || "";
+        detailAddress.textContent = customerAddress && customerAddress !== c.city ? customerAddress : "";
         detailStatus.textContent = getCustomerStatus(c);
         detailCount.textContent = c.robotics.length + c.cm.length;
 
-        mapsLink.href = customerAddress
-          ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(customerAddress)}&travelmode=driving`
-          : `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}&travelmode=driving`;
+        mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`;
 
         roboticsList.innerHTML = c.robotics.length
           ? c.robotics.map((m) => machineCard(m)).join("")
