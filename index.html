@@ -386,16 +386,32 @@
         const month = String(now.getMonth() + 1).padStart(2, "0");
         const year = now.getFullYear();
         const value = `${month}-${year}`;
+        const engineerName = engineerInput.value.trim() || "Hoofdmonteur";
+        const note = noteInput.value.trim();
 
-        const { error } = await supabaseClient
+        const { error: updateError } = await supabaseClient
           .from("machines")
           .update({ last_service: value })
           .eq("id", currentMachineId);
 
-        if (error) {
-          showStatus("Opslaan mislukt", "error");
-          console.error(error);
+        if (updateError) {
+          showStatus("Opslaan van machine mislukt", "error");
+          console.error(updateError);
           return;
+        }
+
+        const { error: eventError } = await supabaseClient
+          .from("service_events")
+          .insert({
+            machine_id: currentMachineId,
+            service_month: value,
+            engineer_name: engineerName,
+            note: note
+          });
+
+        if (eventError) {
+          showStatus("Machine opgeslagen, maar service historie opslaan mislukt", "error");
+          console.error(eventError);
         }
 
         const customer = customers[currentCustomerKey];
