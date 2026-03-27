@@ -12,6 +12,7 @@
     <div class="min-h-screen p-6">
       <div class="mx-auto max-w-7xl">
 
+        <!-- HEADER -->
         <div class="mb-6 rounded-[28px] border border-white/10 bg-slate-900 px-8 py-7">
           <div class="flex flex-col gap-3">
             <div class="text-xs uppercase tracking-[0.45em] text-cyan-300">
@@ -29,8 +30,10 @@
           </div>
         </div>
 
+        <!-- STATUS -->
         <div id="status-bar" class="mb-6 hidden rounded-2xl border px-4 py-3 text-sm"></div>
 
+        <!-- METRICS -->
         <div class="mb-6 grid gap-4 md:grid-cols-4">
           <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-sm text-slate-300">Locaties</div>
@@ -53,8 +56,10 @@
           </div>
         </div>
 
+        <!-- MAIN -->
         <div class="grid gap-6 xl:grid-cols-[1.2fr_0.95fr]">
 
+          <!-- MAP -->
           <section class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
@@ -82,6 +87,7 @@
             </div>
           </section>
 
+          <!-- DETAIL -->
           <aside class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Klantdetail</div>
 
@@ -103,23 +109,13 @@
 
             <div class="mt-5 flex flex-wrap gap-2">
               <a
-                id="waze-link"
+                id="maps-link"
                 href="#"
                 target="_blank"
                 rel="noreferrer"
                 class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950"
               >
-                Waze naar klant
-              </a>
-
-              <a
-                id="route-link"
-                href="#"
-                target="_blank"
-                rel="noreferrer"
-                class="rounded-2xl border border-white/10 px-4 py-2 text-sm"
-              >
-                Route vanaf VDB
+                Maps
               </a>
             </div>
 
@@ -137,6 +133,7 @@
       </div>
     </div>
 
+    <!-- SERVICE MODAL -->
     <div id="service-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
       <div class="w-full max-w-lg rounded-3xl border border-white/10 bg-slate-900 p-6">
         <div class="flex items-center justify-between">
@@ -182,6 +179,7 @@
       </div>
     </div>
 
+    <!-- HISTORY MODAL -->
     <div id="history-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
       <div class="w-full max-w-2xl rounded-3xl border border-white/10 bg-slate-900 p-6">
         <div class="flex items-center justify-between">
@@ -210,8 +208,6 @@
       const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidG9hZXJhZXZ1eWdhanlhZ2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MDUyNzksImV4cCI6MjA5MDA4MTI3OX0.D8gKf3hIwQnP8GULWgN2pINrttdR_oUc_WSK50SQl9c";
       const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      const VDB_ADDRESS = "Bedrijvenpark Twente Noord 89, 7602 KS Almelo, Nederland";
-
       const statusBar = document.getElementById("status-bar");
       const mapArea = document.getElementById("map-area");
       const detailName = document.getElementById("detail-name");
@@ -222,8 +218,7 @@
       const roboticsList = document.getElementById("robotics-list");
       const cmList = document.getElementById("cm-list");
       const search = document.getElementById("search");
-      const wazeLink = document.getElementById("waze-link");
-      const routeLink = document.getElementById("route-link");
+      const mapsLink = document.getElementById("maps-link");
 
       const metricLocaties = document.getElementById("metric-locaties");
       const metricMachines = document.getElementById("metric-machines");
@@ -466,7 +461,6 @@
         if (!c) return;
 
         currentCustomerKey = key;
-
         const customerAddress = buildCustomerAddress(c);
 
         detailName.textContent = c.name;
@@ -475,13 +469,9 @@
         detailStatus.textContent = getCustomerStatus(c);
         detailCount.textContent = c.robotics.length + c.cm.length;
 
-        wazeLink.href = customerAddress
-          ? `https://waze.com/ul?q=${encodeURIComponent(customerAddress)}&navigate=yes`
-          : `https://waze.com/ul?ll=${c.lat},${c.lng}&navigate=yes`;
-
-        routeLink.href = customerAddress
-          ? `https://www.google.com/maps/dir/${encodeURIComponent(VDB_ADDRESS)}/${encodeURIComponent(customerAddress)}`
-          : `https://www.google.com/maps/dir/${encodeURIComponent(VDB_ADDRESS)}/${c.lat},${c.lng}`;
+        mapsLink.href = customerAddress
+          ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(customerAddress)}`
+          : `https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}`;
 
         roboticsList.innerHTML = c.robotics.length
           ? c.robotics.map((m) => machineCard(m)).join("")
