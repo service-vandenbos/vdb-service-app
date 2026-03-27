@@ -168,10 +168,7 @@
           </label>
         </div>
 
-        <div class="mt-5 flex flex-wrap justify-end gap-2">
-          <button id="close-modal-bottom" class="rounded-2xl border border-white/10 px-4 py-2 text-sm">
-            Annuleren
-          </button>
+        <div class="mt-5 flex justify-end">
           <button id="save-service" class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">
             Opslaan
           </button>
@@ -228,7 +225,6 @@
       const serviceModal = document.getElementById("service-modal");
       const modalTitle = document.getElementById("modal-title");
       const closeModalTop = document.getElementById("close-modal-top");
-      const closeModalBottom = document.getElementById("close-modal-bottom");
       const saveServiceBtn = document.getElementById("save-service");
       const engineerInput = document.getElementById("engineer");
       const noteInput = document.getElementById("service-note");
@@ -470,8 +466,8 @@
         detailCount.textContent = c.robotics.length + c.cm.length;
 
         mapsLink.href = customerAddress
-          ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(customerAddress)}`
-          : `https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}`;
+          ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(customerAddress)}&travelmode=driving`
+          : `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}&travelmode=driving`;
 
         roboticsList.innerHTML = c.robotics.length
           ? c.robotics.map((m) => machineCard(m)).join("")
@@ -665,7 +661,6 @@
       });
 
       closeModalTop.addEventListener("click", closeServiceModal);
-      closeModalBottom.addEventListener("click", closeServiceModal);
       saveServiceBtn.addEventListener("click", saveCurrentMachine);
 
       closeHistoryTop.addEventListener("click", closeHistoryModal);
