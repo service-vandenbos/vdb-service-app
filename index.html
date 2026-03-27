@@ -11,10 +11,12 @@
     <div class="min-h-screen p-6">
       <div class="mx-auto max-w-6xl">
         <div class="mb-6 rounded-3xl border border-white/10 bg-slate-900 p-6">
-          <div class="text-xs uppercase tracking-[0.35em] text-cyan-300">VDB Service</div>
+          <div class="text-xs uppercase tracking-[0.35em] text-cyan-300">VDB SERVICE</div>
           <h1 class="mt-2 text-3xl font-semibold">Van den Bos Service</h1>
           <p class="mt-2 text-slate-300">Robot Service App</p>
         </div>
+
+        <div id="status-bar" class="mb-6 hidden rounded-2xl border px-4 py-3 text-sm"></div>
 
         <div class="mb-6 grid gap-4 md:grid-cols-4">
           <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
@@ -37,7 +39,7 @@
 
         <div class="grid gap-6 xl:grid-cols-[1.3fr_0.9fr]">
           <section class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-            <div class="mb-4 flex items-center justify-between">
+            <div class="mb-4 flex items-center justify-between gap-4">
               <div>
                 <h2 class="text-xl font-semibold">Europa kaart</h2>
                 <p class="text-sm text-slate-300">Klik op een klant</p>
@@ -114,12 +116,21 @@
         <div class="mt-5 grid gap-4">
           <label class="block">
             <div class="mb-2 text-sm text-slate-300">Monteur</div>
-            <input id="engineer" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm" value="Hoofdmonteur" />
+            <input
+              id="engineer"
+              class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm"
+              value="Hoofdmonteur"
+            />
           </label>
 
           <label class="block">
             <div class="mb-2 text-sm text-slate-300">Notitie</div>
-            <textarea id="service-note" rows="4" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm" placeholder="Bijvoorbeeld: klant wilde alleen onderhoud aan robot 1"></textarea>
+            <textarea
+              id="service-note"
+              rows="4"
+              class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm"
+              placeholder="Bijvoorbeeld: onderhoud uitgevoerd"
+            ></textarea>
           </label>
         </div>
 
@@ -135,6 +146,7 @@
       const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidG9hZXJhZXZ1eWdhanlhZ2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MDUyNzksImV4cCI6MjA5MDA4MTI3OX0.D8gKf3hIwQnP8GULWgN2pINrttdR_oUc_WSK50SQl9c";
       const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+      const statusBar = document.getElementById("status-bar");
       const mapArea = document.getElementById("map-area");
       const detailName = document.getElementById("detail-name");
       const detailCity = document.getElementById("detail-city");
@@ -151,19 +163,35 @@
       const metricOranje = document.getElementById("metric-oranje");
 
       const modal = document.getElementById("service-modal");
+      const modalTitle = document.getElementById("modal-title");
       const closeModalTop = document.getElementById("close-modal-top");
       const closeModalBottom = document.getElementById("close-modal-bottom");
       const saveServiceBtn = document.getElementById("save-service");
-      const modalTitle = document.getElementById("modal-title");
 
       let customers = {};
       let currentCustomerKey = null;
       let currentMachineId = null;
       let currentMachineName = "";
 
+      function showStatus(message, type = "info") {
+        statusBar.classList.remove("hidden", "border-red-500/30", "bg-red-500/10", "text-red-100", "border-cyan-500/30", "bg-cyan-500/10", "text-cyan-100", "border-emerald-500/30", "bg-emerald-500/10", "text-emerald-100");
+        if (type === "error") {
+          statusBar.classList.add("border-red-500/30", "bg-red-500/10", "text-red-100");
+        } else if (type === "success") {
+          statusBar.classList.add("border-emerald-500/30", "bg-emerald-500/10", "text-emerald-100");
+        } else {
+          statusBar.classList.add("border-cyan-500/30", "bg-cyan-500/10", "text-cyan-100");
+        }
+        statusBar.textContent = message;
+      }
+
+      function hideStatus() {
+        statusBar.classList.add("hidden");
+      }
+
       function parseServiceMonth(value) {
         if (!value || /^-+$/.test(String(value).trim())) return null;
-        const match = String(value).trim().match(/^(\\d{1,2})[-/](\\d{4})$/);
+        const match = String(value).trim().match(/^(\d{1,2})[-/](\d{4})$/);
         if (!match) return null;
         return new Date(Number(match[2]), Number(match[1]) - 1, 1);
       }
@@ -174,10 +202,10 @@
       }
 
       function machineStatus(lastService) {
-        const TODAY = new Date();
         const parsed = parseServiceMonth(lastService);
         if (!parsed) return "Rood";
-        const months = monthDiff(parsed, TODAY);
+        const now = new Date();
+        const months = monthDiff(parsed, now);
         if (months >= 12) return "Rood";
         if (months >= 9) return "Oranje";
         return "Groen";
@@ -185,7 +213,7 @@
 
       function getCustomerStatus(customer) {
         const all = [...customer.robotics, ...customer.cm];
-        if (all.length === 0) return "Groen";
+        if (!all.length) return "Groen";
         if (all.some((m) => m.status === "Rood")) return "Rood";
         if (all.some((m) => m.status === "Oranje")) return "Oranje";
         return "Groen";
@@ -198,9 +226,10 @@
       }
 
       function statusPill(status) {
-        const cls = status === "Rood"
-          ? "bg-red-500/20 text-red-100"
-          : status === "Oranje"
+        const cls =
+          status === "Rood"
+            ? "bg-red-500/20 text-red-100"
+            : status === "Oranje"
             ? "bg-amber-500/20 text-amber-100"
             : "bg-emerald-500/20 text-emerald-100";
 
@@ -260,6 +289,16 @@
         metricOranje.textContent = oranje;
       }
 
+      function getFilteredKeys() {
+        const q = search.value.trim().toLowerCase();
+        if (!q) return Object.keys(customers);
+        return Object.keys(customers).filter((key) => {
+          const c = customers[key];
+          const txt = `${c.name} ${c.city}`.toLowerCase();
+          return txt.includes(q);
+        });
+      }
+
       function renderMarkers(filteredKeys = null) {
         document.querySelectorAll(".dynamic-marker").forEach((el) => el.remove());
 
@@ -269,15 +308,15 @@
           const c = customers[key];
           if (!c) return;
 
-          const status = getCustomerStatus(c);
           const pos = projectToEurope(c.lat, c.lng);
+          const status = getCustomerStatus(c);
 
           const btn = document.createElement("button");
           btn.className = "dynamic-marker absolute -translate-x-1/2 -translate-y-1/2";
           btn.style.left = pos.left;
           btn.style.top = pos.top;
           btn.innerHTML = `
-            <div class="marker-badge flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg ${markerColorClass(status)}">
+            <div class="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg ${markerColorClass(status)}">
               VDB
             </div>
           `;
@@ -322,17 +361,6 @@
         renderMarkers(getFilteredKeys());
       }
 
-      function getFilteredKeys() {
-        const q = search.value.trim().toLowerCase();
-        if (!q) return Object.keys(customers);
-
-        return Object.keys(customers).filter((key) => {
-          const c = customers[key];
-          const txt = `${c.name} ${c.city}`.toLowerCase();
-          return txt.includes(q);
-        });
-      }
-
       function openModal() {
         modal.classList.remove("hidden");
         modal.classList.add("flex");
@@ -344,46 +372,7 @@
       }
 
       async function saveCurrentMachine() {
-  if (!currentMachineId) return;
-
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const year = now.getFullYear();
-  const value = `${month}-${year}`;
-
-  const { error } = await supabaseClient
-    .from("machines")
-    .update({ last_service: value })
-    .eq("id", currentMachineId);
-
-  if (error) {
-    alert("Fout bij opslaan");
-    console.error(error);
-    return;
-  }
-
-  // direct lokaal ook aanpassen
-  const customer = customers[currentCustomerKey];
-  if (customer) {
-    const allLists = [customer.robotics, customer.cm];
-
-    allLists.forEach((list) => {
-      list.forEach((machine) => {
-        if (machine.id === currentMachineId) {
-          machine.lastService = value;
-          machine.status = "Groen";
-        }
-      });
-    });
-  }
-
-  closeModal();
-  renderCustomer(currentCustomerKey);
-  renderMarkers(getFilteredKeys());
-  updateMetrics();
-
-  alert("Service opgeslagen");
-}
+        if (!currentMachineId || !currentCustomerKey) return;
 
         const now = new Date();
         const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -396,29 +385,48 @@
           .eq("id", currentMachineId);
 
         if (error) {
-          alert("Fout bij opslaan");
+          showStatus("Opslaan mislukt. Controleer Supabase of permissies.", "error");
           console.error(error);
           return;
         }
 
+        const customer = customers[currentCustomerKey];
+        if (customer) {
+          [...customer.robotics, ...customer.cm].forEach((machine) => {
+            if (machine.id === currentMachineId) {
+              machine.lastService = value;
+              machine.status = "Groen";
+            }
+          });
+        }
+
         closeModal();
-        await loadData();
-        if (currentCustomerKey) renderCustomer(currentCustomerKey);
-        alert("Service opgeslagen");
+        renderCustomer(currentCustomerKey);
+        renderMarkers(getFilteredKeys());
+        updateMetrics();
+        showStatus(`Service opgeslagen voor ${currentMachineName}`, "success");
       }
 
       async function loadData() {
+        showStatus("Data laden...", "info");
+
         const { data: customerRows, error: customerError } = await supabaseClient
           .from("customers")
           .select("id, name, city, latitude, longitude");
+
+        if (customerError) {
+          showStatus("Fout bij laden van customers", "error");
+          console.error(customerError);
+          return;
+        }
 
         const { data: machineRows, error: machineError } = await supabaseClient
           .from("machines")
           .select("id, customer_id, type, machine_name, last_service");
 
-        if (customerError || machineError) {
-          alert("Fout bij laden uit Supabase");
-          console.error(customerError || machineError);
+        if (machineError) {
+          showStatus("Fout bij laden van machines", "error");
+          console.error(machineError);
           return;
         }
 
@@ -436,7 +444,8 @@
         });
 
         machineRows.forEach((row) => {
-          if (!customers[row.customer_id]) return;
+          const customer = customers[row.customer_id];
+          if (!customer) return;
 
           const machine = {
             id: row.id,
@@ -446,19 +455,22 @@
           };
 
           if ((row.type || "").toLowerCase() === "cm") {
-            customers[row.customer_id].cm.push(machine);
+            customer.cm.push(machine);
           } else {
-            customers[row.customer_id].robotics.push(machine);
+            customer.robotics.push(machine);
           }
         });
 
-        const keys = Object.keys(customers);
-        renderMarkers();
         updateMetrics();
+        renderMarkers();
 
+        const keys = Object.keys(customers);
         if (keys.length > 0) {
-          const stillExists = currentCustomerKey && customers[currentCustomerKey];
-          renderCustomer(stillExists ? currentCustomerKey : keys[0]);
+          renderCustomer(keys[0]);
+          showStatus("Data geladen", "success");
+          setTimeout(hideStatus, 1500);
+        } else {
+          showStatus("Geen klanten gevonden in Supabase", "error");
         }
       }
 
