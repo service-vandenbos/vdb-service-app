@@ -11,6 +11,8 @@
   <body class="bg-slate-950 text-white">
     <div class="min-h-screen p-6">
       <div class="mx-auto max-w-7xl">
+
+        <!-- HEADER -->
         <div class="mb-6 rounded-[28px] border border-white/10 bg-slate-900 px-8 py-7">
           <div class="flex flex-col gap-3">
             <div class="text-xs uppercase tracking-[0.45em] text-cyan-300">
@@ -28,8 +30,10 @@
           </div>
         </div>
 
+        <!-- STATUS -->
         <div id="status-bar" class="mb-6 hidden rounded-2xl border px-4 py-3 text-sm"></div>
 
+        <!-- METRICS -->
         <div class="mb-6 grid gap-4 md:grid-cols-4">
           <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-sm text-slate-300">Locaties</div>
@@ -52,7 +56,10 @@
           </div>
         </div>
 
+        <!-- MAIN -->
         <div class="grid gap-6 xl:grid-cols-[1.2fr_0.95fr]">
+
+          <!-- MAP -->
           <section class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
@@ -80,6 +87,7 @@
             </div>
           </section>
 
+          <!-- DETAIL -->
           <aside class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Klantdetail</div>
 
@@ -349,33 +357,31 @@
         `;
       }
 
-      function buildCustomerAddress(customer) {
+      function buildAddressLine(customer) {
         const street = (customer.address || "").trim();
         const postcode = (customer.postcode || "").trim();
         const city = (customer.city || "").trim();
         const country = (customer.country || "").trim();
 
-        const line2 = [postcode, city].filter(Boolean).join(" ").trim();
-        return [street, line2, country].filter(Boolean).join(", ");
+        const cityLine = [postcode, city].filter(Boolean).join(" ").trim();
+        return [street, cityLine, country].filter(Boolean).join(", ");
       }
 
       function buildMapsQuery(customer) {
-        const name = (customer.name || "").trim();
         const street = (customer.address || "").trim();
         const postcode = (customer.postcode || "").trim();
         const city = (customer.city || "").trim();
         const country = (customer.country || "").trim();
+        const name = (customer.name || "").trim();
 
-        const fullAddress = [street, [postcode, city].filter(Boolean).join(" "), country]
-          .filter(Boolean)
-          .join(", ");
+        const addressLine = buildAddressLine(customer);
 
         if (street) {
-          return [name, fullAddress].filter(Boolean).join(", ");
+          return [name, addressLine].filter(Boolean).join(", ");
         }
 
-        if (fullAddress) {
-          return fullAddress;
+        if (addressLine) {
+          return addressLine;
         }
 
         if (city) {
@@ -471,54 +477,17 @@
       }
 
       function renderCustomer(key) {
-  const c = customers[key];
-  if (!c) return;
-
-  currentCustomerKey = key;
-
-  // 🔥 HARDCODED correcte opbouw
-  const street = (c.address || "").trim();
-  const postcode = (c.postcode || "").trim();
-  const city = (c.city || "").trim();
-  const country = (c.country || "").trim();
-
-  const fullAddress = `${street}, ${postcode} ${city}, ${country}`;
-
-  // UI
-  detailName.textContent = c.name;
-  detailCity.textContent = city;
-  detailAddress.textContent = street ? fullAddress : "";
-
-  detailStatus.textContent = getCustomerStatus(c);
-  detailCount.textContent = c.robotics.length + c.cm.length;
-
-  // 🔥 Maps altijd correct
-  const mapsQuery = `${c.name}, ${fullAddress}`;
-
-  mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`;
-
-  roboticsList.innerHTML = c.robotics.length
-    ? c.robotics.map((m) => machineCard(m)).join("")
-    : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen robotics machines</div>`;
-
-  cmList.innerHTML = c.cm.length
-    ? c.cm.map((m) => machineCard(m)).join("")
-    : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen CM machines</div>`;
-
-  bindMachineButtons();
-  updateMetrics();
-  renderMarkers(getFilteredKeys());
-}
         const c = customers[key];
         if (!c) return;
 
         currentCustomerKey = key;
-        const customerAddress = buildCustomerAddress(c);
+
+        const addressLine = buildAddressLine(c);
         const mapsQuery = buildMapsQuery(c);
 
-        detailName.textContent = c.name;
+        detailName.textContent = c.name || "";
         detailCity.textContent = c.city || "";
-        detailAddress.textContent = customerAddress && customerAddress !== c.city ? customerAddress : "";
+        detailAddress.textContent = addressLine || "";
         detailStatus.textContent = getCustomerStatus(c);
         detailCount.textContent = c.robotics.length + c.cm.length;
 
@@ -668,7 +637,7 @@
 
         customerRows.forEach((row) => {
           customers[row.id] = {
-            name: row.name || "Onbekend",
+            name: row.name || "",
             city: row.city || "",
             address: row.address || "",
             postcode: row.postcode || "",
