@@ -1,682 +1,200 @@
 <!doctype html>
 <html lang="nl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Van den Bos Robotics Service</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  </head>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VDB Service</title>
 
-  <body class="bg-slate-950 text-white">
-    <div class="min-h-screen p-6">
-      <div class="mx-auto max-w-7xl">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
 
-        <div class="mb-6 rounded-[28px] border border-white/10 bg-slate-900 px-8 py-7">
-          <div class="flex flex-col gap-3">
-            <div class="text-xs uppercase tracking-[0.45em] text-cyan-300">
-              Service App
-            </div>
+<body class="bg-slate-950 text-white">
 
-            <div class="flex flex-wrap items-end gap-x-3 gap-y-1 leading-none">
-              <span class="text-4xl font-extrabold tracking-tight text-white md:text-6xl">VAN DEN</span>
-              <span class="text-4xl font-extrabold tracking-tight text-green-500 md:text-6xl">BOS</span>
-            </div>
+<div class="p-6 max-w-7xl mx-auto">
 
-            <div class="pl-1 text-2xl font-light tracking-[0.35em] text-slate-300 md:text-4xl">
-              robotics <span class="font-medium tracking-normal text-white">Service</span>
-            </div>
-          </div>
-        </div>
+  <h1 class="text-3xl font-bold mb-6">
+    Van den Bos Robotics <span class="text-cyan-400">Service</span>
+  </h1>
 
-        <div id="status-bar" class="mb-6 hidden rounded-2xl border px-4 py-3 text-sm"></div>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        <div class="mb-6 grid gap-4 md:grid-cols-4">
-          <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-            <div class="text-sm text-slate-300">Locaties</div>
-            <div id="metric-locaties" class="mt-2 text-3xl font-semibold">0</div>
-          </div>
+    <!-- KAART -->
+    <div id="map" class="h-[500px] bg-slate-900 rounded-2xl relative overflow-hidden"></div>
 
-          <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-            <div class="text-sm text-slate-300">Machines</div>
-            <div id="metric-machines" class="mt-2 text-3xl font-semibold">0</div>
-          </div>
+    <!-- DETAIL -->
+    <div class="bg-slate-900 rounded-2xl p-5">
+      <h2 id="name" class="text-2xl font-semibold">Selecteer klant</h2>
+      <p id="address" class="text-slate-300 mt-2"></p>
 
-          <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-            <div class="text-sm text-slate-300">Rood</div>
-            <div id="metric-rood" class="mt-2 text-3xl font-semibold text-red-400">0</div>
-          </div>
+      <a id="maps" target="_blank"
+         class="inline-block mt-3 px-4 py-2 bg-cyan-400 text-black rounded">
+         Maps
+      </a>
 
-          <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-            <div class="text-sm text-slate-300">Oranje</div>
-            <div id="metric-oranje" class="mt-2 text-3xl font-semibold text-amber-400">0</div>
-          </div>
-        </div>
-
-        <div class="grid gap-6 xl:grid-cols-[1.2fr_0.95fr]">
-
-          <section class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-            <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h2 class="text-xl font-semibold">Europa kaart</h2>
-                <p class="text-sm text-slate-300">Klik op een klant</p>
-              </div>
-
-              <input
-                id="search"
-                placeholder="Zoek klant"
-                class="rounded-2xl border border-white/10 bg-slate-800 px-4 py-2 text-sm outline-none"
-              />
-            </div>
-
-            <div
-              id="map-area"
-              class="relative h-[560px] overflow-hidden rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_transparent_35%),linear-gradient(180deg,_#0f172a_0%,_#111827_100%)]"
-            >
-              <div class="absolute inset-0 opacity-25 pointer-events-none">
-                <div class="absolute left-[10%] top-[18%] h-[42%] w-[28%] rounded-[48%] border border-cyan-200/15"></div>
-                <div class="absolute left-[28%] top-[33%] h-[17%] w-[12%] rounded-[44%] border border-cyan-200/15"></div>
-                <div class="absolute left-[41%] top-[23%] h-[34%] w-[22%] rounded-[44%] border border-cyan-200/15"></div>
-                <div class="absolute left-[53%] top-[57%] h-[12%] w-[9%] rounded-[50%] border border-cyan-200/15"></div>
-              </div>
-            </div>
-          </section>
-
-          <aside class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-            <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Klantdetail</div>
-
-            <h2 id="detail-name" class="mt-2 text-2xl font-semibold">Laden...</h2>
-            <p id="detail-city" class="mt-1 text-sm text-slate-300"></p>
-            <p id="detail-address" class="mt-1 text-sm text-slate-400"></p>
-
-            <div class="mt-5 grid gap-3 sm:grid-cols-2">
-              <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
-                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Status</div>
-                <div id="detail-status" class="mt-2 text-base font-medium">-</div>
-              </div>
-
-              <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
-                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Machines</div>
-                <div id="detail-count" class="mt-2 text-base font-medium">0</div>
-              </div>
-            </div>
-
-            <div class="mt-5 flex flex-wrap gap-2">
-              <a
-                id="maps-link"
-                href="#"
-                target="_blank"
-                rel="noreferrer"
-                class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950"
-              >
-                Maps
-              </a>
-            </div>
-
-            <div class="mt-6">
-              <h3 class="mb-3 text-lg font-semibold">Robotics</h3>
-              <div id="robotics-list" class="space-y-3"></div>
-            </div>
-
-            <div class="mt-6">
-              <h3 class="mb-3 text-lg font-semibold">CM</h3>
-              <div id="cm-list" class="space-y-3"></div>
-            </div>
-          </aside>
-        </div>
+      <div class="mt-6">
+        <h3 class="font-semibold mb-3">Machines</h3>
+        <div id="machines"></div>
       </div>
     </div>
 
-    <div id="service-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
-      <div class="w-full max-w-lg rounded-3xl border border-white/10 bg-slate-900 p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Service</div>
-            <h3 id="modal-title" class="mt-2 text-2xl font-semibold">Service registreren</h3>
-          </div>
+  </div>
+</div>
 
-          <button id="close-modal-top" class="rounded-xl border border-white/10 px-3 py-2 text-sm">
-            Sluiten
-          </button>
-        </div>
+<!-- SERVICE MODAL -->
+<div id="modal" class="fixed inset-0 hidden items-center justify-center bg-black/60">
+  <div class="bg-slate-900 p-6 rounded-2xl w-[400px]">
 
-        <div class="mt-5 grid gap-4">
-          <label class="block">
-            <div class="mb-2 text-sm text-slate-300">Monteur</div>
-            <input
-              id="engineer"
-              class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none"
-              value="Hoofdmonteur"
-            />
-          </label>
+    <h3 id="modal-title" class="text-xl mb-4"></h3>
 
-          <label class="block">
-            <div class="mb-2 text-sm text-slate-300">Notitie</div>
-            <textarea
-              id="service-note"
-              rows="4"
-              class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none"
-              placeholder="Bijvoorbeeld: onderhoud uitgevoerd"
-            ></textarea>
-          </label>
-        </div>
+    <input id="engineer" class="w-full mb-3 p-2 bg-slate-800 rounded" value="Hoofdmonteur">
+    <textarea id="note" class="w-full mb-3 p-2 bg-slate-800 rounded"></textarea>
 
-        <div class="mt-5 flex justify-end">
-          <button id="save-service" class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">
-            Opslaan
-          </button>
-        </div>
-      </div>
+    <div class="flex justify-end gap-2">
+      <button onclick="closeModal()">Sluiten</button>
+      <button onclick="saveService()" class="bg-cyan-400 text-black px-3 py-1 rounded">
+        Opslaan
+      </button>
     </div>
 
-    <div id="history-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
-      <div class="w-full max-w-2xl rounded-3xl border border-white/10 bg-slate-900 p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Historie</div>
-            <h3 id="history-title" class="mt-2 text-2xl font-semibold">Service historie</h3>
-          </div>
+  </div>
+</div>
 
-          <button id="close-history-top" class="rounded-xl border border-white/10 px-3 py-2 text-sm">
-            Sluiten
-          </button>
-        </div>
+<script>
 
-        <div id="history-list" class="mt-5 max-h-[60vh] space-y-3 overflow-auto"></div>
+const supabase = window.supabase.createClient(
+  "https://tbtoaeraevuygajyaggj.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidG9hZXJhZXZ1eWdhanlhZ2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MDUyNzksImV4cCI6MjA5MDA4MTI3OX0.D8gKf3hIwQnP8GULWgN2pINrttdR_oUc_WSK50SQl9c"
+);
 
-        <div class="mt-5 flex justify-end">
-          <button id="close-history-bottom" class="rounded-2xl border border-white/10 px-4 py-2 text-sm">
-            Sluiten
-          </button>
-        </div>
+let customers = {};
+let machines = [];
+let currentCustomer = null;
+let currentMachine = null;
+
+function status(last){
+  if(!last) return "Rood";
+  const [m,y] = last.split("-");
+  const d = new Date(y,m-1,1);
+  const now = new Date();
+  const diff = (now.getFullYear()-d.getFullYear())*12 + (now.getMonth()-d.getMonth());
+  if(diff>12) return "Rood";
+  if(diff>9) return "Oranje";
+  return "Groen";
+}
+
+async function load(){
+
+  const {data:cust} = await supabase.from("customers").select("*");
+  const {data:mach} = await supabase.from("machines").select("*");
+
+  machines = mach;
+
+  cust.forEach(c=>{
+    customers[c.id] = {...c, machines:[]};
+  });
+
+  mach.forEach(m=>{
+    if(customers[m.customer_id]){
+      customers[m.customer_id].machines.push(m);
+    }
+  });
+
+  renderMap();
+}
+
+function renderMap(){
+
+  const map = document.getElementById("map");
+  map.innerHTML = "";
+
+  Object.values(customers).forEach(c=>{
+
+    const el = document.createElement("button");
+
+    el.style.position="absolute";
+    el.style.left = ((c.longitude+10)/35*100)+"%";
+    el.style.top = (100-(c.latitude-35)/25*100)+"%";
+
+    el.innerHTML = `<div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-xs text-black font-bold">VDB</div>`;
+
+    el.onclick = ()=>selectCustomer(c.id);
+
+    map.appendChild(el);
+  });
+}
+
+function selectCustomer(id){
+
+  const c = customers[id];
+  currentCustomer = c;
+
+  const addr = `${c.address}, ${c.postcode} ${c.city}, ${c.country}`;
+
+  document.getElementById("name").innerText = c.name;
+  document.getElementById("address").innerText = addr;
+
+  document.getElementById("maps").href =
+    "https://www.google.com/maps/search/?api=1&query=" +
+    encodeURIComponent(addr);
+
+  const list = document.getElementById("machines");
+  list.innerHTML = "";
+
+  c.machines.forEach(m=>{
+
+    const s = status(m.last_service);
+
+    const el = document.createElement("div");
+    el.className="bg-slate-800 p-3 rounded mb-2";
+
+    el.innerHTML = `
+      <b>${m.machine_name}</b><br>
+      ${m.last_service || "---"}<br>
+      ${s}
+      <div class="mt-2">
+        <button onclick="openModal('${m.id}','${m.machine_name}')">Service</button>
       </div>
-    </div>
+    `;
 
-    <script>
-      const SUPABASE_URL = "https://tbtoaeraevuygajyaggj.supabase.co";
-      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidG9hZXJhZXZ1eWdhanlhZ2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MDUyNzksImV4cCI6MjA5MDA4MTI3OX0.D8gKf3hIwQnP8GULWgN2pINrttdR_oUc_WSK50SQl9c";
-      const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    list.appendChild(el);
+  });
+}
 
-      const statusBar = document.getElementById("status-bar");
-      const mapArea = document.getElementById("map-area");
-      const detailName = document.getElementById("detail-name");
-      const detailCity = document.getElementById("detail-city");
-      const detailAddress = document.getElementById("detail-address");
-      const detailStatus = document.getElementById("detail-status");
-      const detailCount = document.getElementById("detail-count");
-      const roboticsList = document.getElementById("robotics-list");
-      const cmList = document.getElementById("cm-list");
-      const search = document.getElementById("search");
-      const mapsLink = document.getElementById("maps-link");
+function openModal(id,name){
+  currentMachine=id;
+  document.getElementById("modal-title").innerText=name;
+  document.getElementById("modal").classList.remove("hidden");
+  document.getElementById("modal").classList.add("flex");
+}
 
-      const metricLocaties = document.getElementById("metric-locaties");
-      const metricMachines = document.getElementById("metric-machines");
-      const metricRood = document.getElementById("metric-rood");
-      const metricOranje = document.getElementById("metric-oranje");
+function closeModal(){
+  document.getElementById("modal").classList.add("hidden");
+}
 
-      const serviceModal = document.getElementById("service-modal");
-      const modalTitle = document.getElementById("modal-title");
-      const closeModalTop = document.getElementById("close-modal-top");
-      const saveServiceBtn = document.getElementById("save-service");
-      const engineerInput = document.getElementById("engineer");
-      const noteInput = document.getElementById("service-note");
+async function saveService(){
 
-      const historyModal = document.getElementById("history-modal");
-      const historyTitle = document.getElementById("history-title");
-      const historyList = document.getElementById("history-list");
-      const closeHistoryTop = document.getElementById("close-history-top");
-      const closeHistoryBottom = document.getElementById("close-history-bottom");
+  const now = new Date();
+  const val = (now.getMonth()+1).toString().padStart(2,"0")+"-"+now.getFullYear();
 
-      let customers = {};
-      let currentCustomerKey = null;
-      let currentMachineId = null;
-      let currentMachineName = "";
+  await supabase.from("machines")
+    .update({last_service:val})
+    .eq("id",currentMachine);
 
-      function showStatus(message, type = "info") {
-        statusBar.className = "mb-6 rounded-2xl border px-4 py-3 text-sm";
-        statusBar.classList.remove("hidden");
+  await supabase.from("service_events").insert({
+    machine_id:currentMachine,
+    service_month:val,
+    engineer_name:document.getElementById("engineer").value,
+    note:document.getElementById("note").value
+  });
 
-        if (type === "error") {
-          statusBar.classList.add("border-red-500/30", "bg-red-500/10", "text-red-100");
-        } else if (type === "success") {
-          statusBar.classList.add("border-emerald-500/30", "bg-emerald-500/10", "text-emerald-100");
-        } else {
-          statusBar.classList.add("border-cyan-500/30", "bg-cyan-500/10", "text-cyan-100");
-        }
+  closeModal();
+  load();
+}
 
-        statusBar.textContent = message;
-      }
+load();
 
-      function hideStatus() {
-        statusBar.classList.add("hidden");
-      }
+</script>
 
-      function parseServiceMonth(value) {
-        if (!value || /^-+$/.test(String(value).trim())) return null;
-        const match = String(value).trim().match(/^(\d{1,2})[-/](\d{4})$/);
-        if (!match) return null;
-        return new Date(Number(match[2]), Number(match[1]) - 1, 1);
-      }
-
-      function monthDiff(start, end) {
-        if (!start || !end) return 999;
-        return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-      }
-
-      function machineStatus(lastService) {
-        const parsed = parseServiceMonth(lastService);
-        if (!parsed) return "Rood";
-        const now = new Date();
-        const months = monthDiff(parsed, now);
-        if (months >= 12) return "Rood";
-        if (months >= 9) return "Oranje";
-        return "Groen";
-      }
-
-      function getCustomerStatus(customer) {
-        const all = [...customer.robotics, ...customer.cm];
-        if (!all.length) return "Groen";
-        if (all.some((m) => m.status === "Rood")) return "Rood";
-        if (all.some((m) => m.status === "Oranje")) return "Oranje";
-        return "Groen";
-      }
-
-      function markerColorClass(status) {
-        if (status === "Rood") return "bg-red-500";
-        if (status === "Oranje") return "bg-amber-400";
-        return "bg-emerald-500";
-      }
-
-      function statusPill(status) {
-        const cls =
-          status === "Rood"
-            ? "bg-red-500/20 text-red-100"
-            : status === "Oranje"
-            ? "bg-amber-500/20 text-amber-100"
-            : "bg-emerald-500/20 text-emerald-100";
-
-        return `<span class="rounded-full px-3 py-1 text-xs font-semibold ${cls}">${status}</span>`;
-      }
-
-      function machineCard(machine) {
-        return `
-          <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <div class="font-medium">${machine.name}</div>
-                <div class="mt-1 text-sm text-slate-300">Laatste service: ${machine.lastService || "---"}</div>
-              </div>
-              ${statusPill(machine.status)}
-            </div>
-
-            <div class="mt-4 flex flex-wrap gap-2">
-              <button
-                class="service-btn rounded-xl border border-white/10 px-3 py-2 text-sm"
-                data-id="${machine.id}"
-                data-name="${machine.name}"
-              >
-                Service
-              </button>
-
-              <button
-                class="history-btn rounded-xl border border-white/10 px-3 py-2 text-sm"
-                data-id="${machine.id}"
-                data-name="${machine.name}"
-              >
-                Historie
-              </button>
-            </div>
-          </div>
-        `;
-      }
-
-      function historyCard(event) {
-        const note = event.note && event.note.trim() ? event.note : "-";
-        const engineer = event.engineer_name && event.engineer_name.trim() ? event.engineer_name : "-";
-        const month = event.service_month || "-";
-
-        return `
-          <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div class="font-medium">${month}</div>
-              <div class="text-xs text-slate-400">
-                ${event.created_at ? new Date(event.created_at).toLocaleString("nl-NL") : ""}
-              </div>
-            </div>
-            <div class="mt-2 text-sm text-slate-300">Monteur: ${engineer}</div>
-            <div class="mt-2 text-sm text-slate-300">Notitie: ${note}</div>
-          </div>
-        `;
-      }
-
-      function buildAddressLine(customer) {
-        const street = (customer.address || "").trim();
-        const postcode = (customer.postcode || "").trim();
-        const city = (customer.city || "").trim();
-        const country = (customer.country || "").trim();
-
-        const cityLine = [postcode, city].filter(Boolean).join(" ").trim();
-        return [street, cityLine, country].filter(Boolean).join(", ");
-      }
-
-      function buildMapsQuery(customer) {
-        const addressLine = buildAddressLine(customer);
-        const name = (customer.name || "").trim();
-
-        if (addressLine) return [name, addressLine].filter(Boolean).join(", ");
-        if (customer.city) return [name, customer.city, customer.country || ""].filter(Boolean).join(", ");
-        return `${customer.lat},${customer.lng}`;
-      }
-
-      function projectToEurope(lat, lng) {
-        const x = ((Number(lng) + 10) / 35) * 100;
-        const y = 100 - (((Number(lat) - 35) / 25) * 100);
-        return {
-          left: `${Math.max(6, Math.min(94, x)).toFixed(1)}%`,
-          top: `${Math.max(8, Math.min(92, y)).toFixed(1)}%`
-        };
-      }
-
-      function updateMetrics() {
-        const keys = Object.keys(customers);
-        let machines = 0;
-        let rood = 0;
-        let oranje = 0;
-
-        keys.forEach((key) => {
-          const c = customers[key];
-          const all = [...c.robotics, ...c.cm];
-          machines += all.length;
-          all.forEach((m) => {
-            if (m.status === "Rood") rood++;
-            if (m.status === "Oranje") oranje++;
-          });
-        });
-
-        metricLocaties.textContent = keys.length;
-        metricMachines.textContent = machines;
-        metricRood.textContent = rood;
-        metricOranje.textContent = oranje;
-      }
-
-      function getFilteredKeys() {
-        const q = search.value.trim().toLowerCase();
-        if (!q) return Object.keys(customers);
-
-        return Object.keys(customers).filter((key) => {
-          const c = customers[key];
-          const txt = `${c.name} ${c.city} ${c.address || ""} ${c.postcode || ""}`.toLowerCase();
-          return txt.includes(q);
-        });
-      }
-
-      function renderMarkers(filteredKeys = null) {
-        document.querySelectorAll(".dynamic-marker").forEach((el) => el.remove());
-
-        const keys = filteredKeys || Object.keys(customers);
-
-        keys.forEach((key) => {
-          const c = customers[key];
-          if (!c) return;
-
-          const pos = projectToEurope(c.lat, c.lng);
-          const status = getCustomerStatus(c);
-
-          const btn = document.createElement("button");
-          btn.className = "dynamic-marker absolute -translate-x-1/2 -translate-y-1/2";
-          btn.style.left = pos.left;
-          btn.style.top = pos.top;
-          btn.innerHTML = `
-            <div class="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg ${markerColorClass(status)}">
-              VDB
-            </div>
-          `;
-          btn.addEventListener("click", () => renderCustomer(key));
-          mapArea.appendChild(btn);
-        });
-      }
-
-      function bindMachineButtons() {
-        document.querySelectorAll(".service-btn").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            currentMachineId = btn.dataset.id;
-            currentMachineName = btn.dataset.name;
-            modalTitle.textContent = `Service registreren - ${currentMachineName}`;
-            openServiceModal();
-          });
-        });
-
-        document.querySelectorAll(".history-btn").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            openHistory(btn.dataset.id, btn.dataset.name);
-          });
-        });
-      }
-
-      function renderCustomer(key) {
-        const c = customers[key];
-        if (!c) return;
-
-        currentCustomerKey = key;
-
-        const addressLine = buildAddressLine(c);
-        const mapsQuery = buildMapsQuery(c);
-
-        detailName.textContent = c.name || "";
-        detailCity.textContent = c.city || "";
-        detailAddress.textContent = addressLine || "";
-        detailStatus.textContent = getCustomerStatus(c);
-        detailCount.textContent = c.robotics.length + c.cm.length;
-
-        mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`;
-
-        roboticsList.innerHTML = c.robotics.length
-          ? c.robotics.map((m) => machineCard(m)).join("")
-          : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen robotics machines</div>`;
-
-        cmList.innerHTML = c.cm.length
-          ? c.cm.map((m) => machineCard(m)).join("")
-          : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen CM machines</div>`;
-
-        bindMachineButtons();
-        updateMetrics();
-        renderMarkers(getFilteredKeys());
-      }
-
-      function openServiceModal() {
-        serviceModal.classList.remove("hidden");
-        serviceModal.classList.add("flex");
-      }
-
-      function closeServiceModal() {
-        serviceModal.classList.add("hidden");
-        serviceModal.classList.remove("flex");
-        engineerInput.value = "Hoofdmonteur";
-        noteInput.value = "";
-      }
-
-      function openHistoryModal() {
-        historyModal.classList.remove("hidden");
-        historyModal.classList.add("flex");
-      }
-
-      function closeHistoryModal() {
-        historyModal.classList.add("hidden");
-        historyModal.classList.remove("flex");
-        historyList.innerHTML = "";
-      }
-
-      async function openHistory(machineId, machineName) {
-        historyTitle.textContent = `Service historie - ${machineName}`;
-        historyList.innerHTML = `<div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4 text-sm text-slate-300">Laden...</div>`;
-        openHistoryModal();
-
-        const { data, error } = await supabaseClient
-          .from("service_events")
-          .select("service_month, engineer_name, note, created_at")
-          .eq("machine_id", machineId)
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          historyList.innerHTML = `<div class="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-100">Fout bij laden van historie</div>`;
-          console.error(error);
-          return;
-        }
-
-        if (!data || data.length === 0) {
-          historyList.innerHTML = `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Nog geen service historie</div>`;
-          return;
-        }
-
-        historyList.innerHTML = data.map((event) => historyCard(event)).join("");
-      }
-
-      async function saveCurrentMachine() {
-        if (!currentMachineId || !currentCustomerKey) return;
-
-        const now = new Date();
-        const month = String(now.getMonth() + 1).padStart(2, "0");
-        const year = now.getFullYear();
-        const value = `${month}-${year}`;
-        const engineerName = engineerInput.value.trim() || "Hoofdmonteur";
-        const note = noteInput.value.trim();
-
-        const { error: updateError } = await supabaseClient
-          .from("machines")
-          .update({ last_service: value })
-          .eq("id", currentMachineId);
-
-        if (updateError) {
-          showStatus("Opslaan van machine mislukt", "error");
-          console.error(updateError);
-          return;
-        }
-
-        const { error: eventError } = await supabaseClient
-          .from("service_events")
-          .insert({
-            machine_id: currentMachineId,
-            service_month: value,
-            engineer_name: engineerName,
-            note: note
-          });
-
-        if (eventError) {
-          showStatus("Machine opgeslagen, maar service historie opslaan mislukt", "error");
-          console.error(eventError);
-        }
-
-        const customer = customers[currentCustomerKey];
-        if (customer) {
-          [...customer.robotics, ...customer.cm].forEach((machine) => {
-            if (machine.id === currentMachineId) {
-              machine.lastService = value;
-              machine.status = "Groen";
-            }
-          });
-        }
-
-        const savedName = currentMachineName;
-        currentMachineId = null;
-        currentMachineName = "";
-
-        closeServiceModal();
-        renderCustomer(currentCustomerKey);
-        renderMarkers(getFilteredKeys());
-        updateMetrics();
-        showStatus(`Service opgeslagen voor ${savedName}`, "success");
-      }
-
-      async function loadData() {
-        showStatus("Data laden...", "info");
-
-        const { data: customerRows, error: customerError } = await supabaseClient
-          .from("customers")
-          .select("id, name, city, address, postcode, country, latitude, longitude");
-
-        if (customerError) {
-          showStatus("Fout bij laden van customers", "error");
-          console.error(customerError);
-          return;
-        }
-
-        const { data: machineRows, error: machineError } = await supabaseClient
-          .from("machines")
-          .select("id, customer_id, type, machine_name, last_service");
-
-        if (machineError) {
-          showStatus("Fout bij laden van machines", "error");
-          console.error(machineError);
-          return;
-        }
-
-        customers = {};
-
-        customerRows.forEach((row) => {
-          customers[row.id] = {
-            id: row.id,
-            name: row.name || "",
-            city: row.city || "",
-            address: row.address || "",
-            postcode: row.postcode || "",
-            country: row.country || "",
-            lat: row.latitude || 50,
-            lng: row.longitude || 5,
-            robotics: [],
-            cm: []
-          };
-        });
-
-        machineRows.forEach((row) => {
-          const customer = customers[row.customer_id];
-          if (!customer) return;
-
-          const machine = {
-            id: row.id,
-            name: row.machine_name || "Machine",
-            lastService: row.last_service || "---",
-            status: machineStatus(row.last_service || "---")
-          };
-
-          if ((row.type || "").toLowerCase() === "cm") {
-            customer.cm.push(machine);
-          } else {
-            customer.robotics.push(machine);
-          }
-        });
-
-        updateMetrics();
-        renderMarkers();
-
-        const keys = Object.keys(customers);
-        if (keys.length > 0) {
-          renderCustomer(keys[0]);
-          showStatus("Data geladen", "success");
-          setTimeout(hideStatus, 1500);
-        } else {
-          showStatus("Geen klanten gevonden", "error");
-        }
-      }
-
-      search.addEventListener("input", () => {
-        renderMarkers(getFilteredKeys());
-      });
-
-      closeModalTop.addEventListener("click", closeServiceModal);
-      saveServiceBtn.addEventListener("click", saveCurrentMachine);
-
-      closeHistoryTop.addEventListener("click", closeHistoryModal);
-      closeHistoryBottom.addEventListener("click", closeHistoryModal);
-
-      serviceModal.addEventListener("click", (e) => {
-        if (e.target === serviceModal) closeServiceModal();
-      });
-
-      historyModal.addEventListener("click", (e) => {
-        if (e.target === historyModal) closeHistoryModal();
-      });
-
-      loadData();
-    </script>
-  </body>
+</body>
 </html>
