@@ -3,62 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VDB Service</title>
+<title>VDB Debug</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
-<body class="bg-slate-950 text-white">
+<body class="bg-black text-white p-6">
 
-<div class="p-6 max-w-7xl mx-auto">
+<h1 class="text-2xl mb-4">DEBUG</h1>
 
-  <h1 class="text-3xl font-bold mb-6">
-    Van den Bos Robotics <span class="text-cyan-400">Service</span>
-  </h1>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-    <!-- KAART -->
-    <div id="map" class="h-[500px] bg-slate-900 rounded-2xl relative overflow-hidden"></div>
-
-    <!-- DETAIL -->
-    <div class="bg-slate-900 rounded-2xl p-5">
-      <h2 id="name" class="text-2xl font-semibold">Selecteer klant</h2>
-      <p id="address" class="text-slate-300 mt-2"></p>
-
-      <a id="maps" target="_blank"
-         class="inline-block mt-3 px-4 py-2 bg-cyan-400 text-black rounded">
-         Maps
-      </a>
-
-      <div class="mt-6">
-        <h3 class="font-semibold mb-3">Machines</h3>
-        <div id="machines"></div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- SERVICE MODAL -->
-<div id="modal" class="fixed inset-0 hidden items-center justify-center bg-black/60">
-  <div class="bg-slate-900 p-6 rounded-2xl w-[400px]">
-
-    <h3 id="modal-title" class="text-xl mb-4"></h3>
-
-    <input id="engineer" class="w-full mb-3 p-2 bg-slate-800 rounded" value="Hoofdmonteur">
-    <textarea id="note" class="w-full mb-3 p-2 bg-slate-800 rounded"></textarea>
-
-    <div class="flex justify-end gap-2">
-      <button onclick="closeModal()">Sluiten</button>
-      <button onclick="saveService()" class="bg-cyan-400 text-black px-3 py-1 rounded">
-        Opslaan
-      </button>
-    </div>
-
-  </div>
-</div>
+<div id="log" class="text-sm bg-slate-900 p-4 rounded"></div>
 
 <script>
 
@@ -67,132 +22,39 @@ const supabase = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidG9hZXJhZXZ1eWdhanlhZ2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MDUyNzksImV4cCI6MjA5MDA4MTI3OX0.D8gKf3hIwQnP8GULWgN2pINrttdR_oUc_WSK50SQl9c"
 );
 
-let customers = {};
-let machines = [];
-let currentCustomer = null;
-let currentMachine = null;
+const log = document.getElementById("log");
 
-function status(last){
-  if(!last) return "Rood";
-  const [m,y] = last.split("-");
-  const d = new Date(y,m-1,1);
-  const now = new Date();
-  const diff = (now.getFullYear()-d.getFullYear())*12 + (now.getMonth()-d.getMonth());
-  if(diff>12) return "Rood";
-  if(diff>9) return "Oranje";
-  return "Groen";
+function write(msg){
+  log.innerHTML += "<div>"+msg+"</div>";
 }
 
-async function load(){
+async function test(){
 
-  const {data:cust} = await supabase.from("customers").select("*");
-  const {data:mach} = await supabase.from("machines").select("*");
+  write("Start laden...");
 
-  machines = mach;
+  const {data:customers, error:e1} =
+    await supabase.from("customers").select("*");
 
-  cust.forEach(c=>{
-    customers[c.id] = {...c, machines:[]};
-  });
+  if(e1){
+    write("❌ Customers error: "+e1.message);
+  } else {
+    write("✅ Customers: "+customers.length);
+    console.log(customers);
+  }
 
-  mach.forEach(m=>{
-    if(customers[m.customer_id]){
-      customers[m.customer_id].machines.push(m);
-    }
-  });
+  const {data:machines, error:e2} =
+    await supabase.from("machines").select("*");
 
-  renderMap();
+  if(e2){
+    write("❌ Machines error: "+e2.message);
+  } else {
+    write("✅ Machines: "+machines.length);
+    console.log(machines);
+  }
+
 }
 
-function renderMap(){
-
-  const map = document.getElementById("map");
-  map.innerHTML = "";
-
-  Object.values(customers).forEach(c=>{
-
-    const el = document.createElement("button");
-
-    el.style.position="absolute";
-    el.style.left = ((c.longitude+10)/35*100)+"%";
-    el.style.top = (100-(c.latitude-35)/25*100)+"%";
-
-    el.innerHTML = `<div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-xs text-black font-bold">VDB</div>`;
-
-    el.onclick = ()=>selectCustomer(c.id);
-
-    map.appendChild(el);
-  });
-}
-
-function selectCustomer(id){
-
-  const c = customers[id];
-  currentCustomer = c;
-
-  const addr = `${c.address}, ${c.postcode} ${c.city}, ${c.country}`;
-
-  document.getElementById("name").innerText = c.name;
-  document.getElementById("address").innerText = addr;
-
-  document.getElementById("maps").href =
-    "https://www.google.com/maps/search/?api=1&query=" +
-    encodeURIComponent(addr);
-
-  const list = document.getElementById("machines");
-  list.innerHTML = "";
-
-  c.machines.forEach(m=>{
-
-    const s = status(m.last_service);
-
-    const el = document.createElement("div");
-    el.className="bg-slate-800 p-3 rounded mb-2";
-
-    el.innerHTML = `
-      <b>${m.machine_name}</b><br>
-      ${m.last_service || "---"}<br>
-      ${s}
-      <div class="mt-2">
-        <button onclick="openModal('${m.id}','${m.machine_name}')">Service</button>
-      </div>
-    `;
-
-    list.appendChild(el);
-  });
-}
-
-function openModal(id,name){
-  currentMachine=id;
-  document.getElementById("modal-title").innerText=name;
-  document.getElementById("modal").classList.remove("hidden");
-  document.getElementById("modal").classList.add("flex");
-}
-
-function closeModal(){
-  document.getElementById("modal").classList.add("hidden");
-}
-
-async function saveService(){
-
-  const now = new Date();
-  const val = (now.getMonth()+1).toString().padStart(2,"0")+"-"+now.getFullYear();
-
-  await supabase.from("machines")
-    .update({last_service:val})
-    .eq("id",currentMachine);
-
-  await supabase.from("service_events").insert({
-    machine_id:currentMachine,
-    service_month:val,
-    engineer_name:document.getElementById("engineer").value,
-    note:document.getElementById("note").value
-  });
-
-  closeModal();
-  load();
-}
-
-load();
+test();
 
 </script>
 
