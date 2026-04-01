@@ -360,7 +360,6 @@
         const postcode = (customer.postcode || "").trim();
         const city = (customer.city || "").trim();
         const country = (customer.country || "").trim();
-
         const line2 = [postcode, city].filter(Boolean).join(" ").trim();
         return [street, line2, country].filter(Boolean).join(", ");
       }
@@ -368,10 +367,19 @@
       function buildMapsQuery(customer) {
         const address = buildCustomerAddress(customer);
         const name = (customer.name || "").trim();
-
         if (address) return [name, address].filter(Boolean).join(", ");
         if (customer.city) return [name, customer.city, customer.country || ""].filter(Boolean).join(", ");
         return `${customer.lat},${customer.lng}`;
+      }
+
+      function buildExactDuplicateKey(customer) {
+        return [
+          (customer.name || "").trim().toLowerCase(),
+          (customer.address || "").trim().toLowerCase(),
+          (customer.postcode || "").trim().toLowerCase(),
+          (customer.city || "").trim().toLowerCase(),
+          (customer.country || "").trim().toLowerCase()
+        ].join("|");
       }
 
       function projectToEurope(lat, lng) {
@@ -642,10 +650,12 @@
         }
 
         customers = {};
+        const duplicateGroups = {};
 
         customerRows.forEach((row) => {
-          customers[row.id] = {
+          const draftCustomer = {
             id: row.id,
+            sourceIds: [row.id],
             name: row.name || "Onbekend",
             city: row.city || "",
             address: row.address || "",
@@ -656,11 +666,33 @@
             robotics: [],
             cm: []
           };
+
+          const duplicateKey = buildExactDuplicateKey(draftCustomer);
+
+          if (!duplicateGroups[duplicateKey]) {
+            duplicateGroups[duplicateKey] = draftCustomer;
+          } else {
+            duplicateGroups[duplicateKey].sourceIds.push(row.id);
+
+            if (!duplicateGroups[duplicateKey].lat && draftCustomer.lat) {
+              duplicateGroups[duplicateKey].lat = draftCustomer.lat;
+            }
+            if (!duplicateGroups[duplicateKey].lng && draftCustomer.lng) {
+              duplicateGroups[duplicateKey].lng = draftCustomer.lng;
+            }
+          }
+        });
+
+        Object.values(duplicateGroups).forEach((customer) => {
+          customers[customer.id] = customer;
         });
 
         machineRows.forEach((row) => {
-          const customer = customers[row.customer_id];
-          if (!customer) return;
+          const targetCustomer = Object.values(customers).find((customer) =>
+            customer.sourceIds.includes(row.customer_id)
+          );
+
+          if (!targetCustomer) return;
 
           const machine = {
             id: row.id,
@@ -670,9 +702,9 @@
           };
 
           if ((row.type || "").toLowerCase() === "cm") {
-            customer.cm.push(machine);
+            targetCustomer.cm.push(machine);
           } else {
-            customer.robotics.push(machine);
+            targetCustomer.robotics.push(machine);
           }
         });
 
