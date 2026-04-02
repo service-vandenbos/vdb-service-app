@@ -11,18 +11,13 @@
   <body class="bg-slate-950 text-white">
     <div class="min-h-screen p-6">
       <div class="mx-auto max-w-7xl">
-
         <div class="mb-6 rounded-[28px] border border-white/10 bg-slate-900 px-8 py-7">
           <div class="flex flex-col gap-3">
-            <div class="text-xs uppercase tracking-[0.45em] text-cyan-300">
-              Service App
-            </div>
-
+            <div class="text-xs uppercase tracking-[0.45em] text-cyan-300">Service App</div>
             <div class="flex flex-wrap items-end gap-x-3 gap-y-1 leading-none">
               <span class="text-4xl font-extrabold tracking-tight text-white md:text-6xl">VAN DEN</span>
               <span class="text-4xl font-extrabold tracking-tight text-green-500 md:text-6xl">BOS</span>
             </div>
-
             <div class="pl-1 text-2xl font-light tracking-[0.35em] text-slate-300 md:text-4xl">
               robotics <span class="font-medium tracking-normal text-white">Service</span>
             </div>
@@ -36,17 +31,14 @@
             <div class="text-sm text-slate-300">Locaties</div>
             <div id="metric-locaties" class="mt-2 text-3xl font-semibold">0</div>
           </div>
-
           <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-sm text-slate-300">Machines</div>
             <div id="metric-machines" class="mt-2 text-3xl font-semibold">0</div>
           </div>
-
           <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-sm text-slate-300">Rood</div>
             <div id="metric-rood" class="mt-2 text-3xl font-semibold text-red-400">0</div>
           </div>
-
           <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="text-sm text-slate-300">Oranje</div>
             <div id="metric-oranje" class="mt-2 text-3xl font-semibold text-amber-400">0</div>
@@ -54,7 +46,6 @@
         </div>
 
         <div class="grid gap-6 xl:grid-cols-[1.2fr_0.95fr]">
-
           <section class="rounded-3xl border border-white/10 bg-slate-900 p-5">
             <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
@@ -73,7 +64,7 @@
               id="map-area"
               class="relative h-[420px] overflow-hidden rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_transparent_35%),linear-gradient(180deg,_#0f172a_0%,_#111827_100%)]"
             >
-              <div class="absolute inset-0 opacity-25 pointer-events-none">
+              <div class="absolute inset-0 pointer-events-none opacity-25">
                 <div class="absolute left-[10%] top-[18%] h-[42%] w-[28%] rounded-[48%] border border-cyan-200/15"></div>
                 <div class="absolute left-[28%] top-[33%] h-[17%] w-[12%] rounded-[44%] border border-cyan-200/15"></div>
                 <div class="absolute left-[41%] top-[23%] h-[34%] w-[22%] rounded-[44%] border border-cyan-200/15"></div>
@@ -233,8 +224,8 @@
       const closeHistoryTop = document.getElementById("close-history-top");
       const closeHistoryBottom = document.getElementById("close-history-bottom");
 
-      let customers = {};
-      let currentCustomerKey = null;
+      let customers = [];
+      let currentCustomerId = null;
       let currentMachineId = null;
       let currentMachineName = "";
 
@@ -255,6 +246,25 @@
 
       function hideStatus() {
         statusBar.classList.add("hidden");
+      }
+
+      function normalizeValue(value) {
+        return String(value || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/ß/g, "ss")
+          .replace(/[^a-z0-9]+/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
+      function normalizePostcode(value) {
+        return String(value || "")
+          .toLowerCase()
+          .replace(/\s+/g, "")
+          .replace(/[^a-z0-9]/g, "")
+          .trim();
       }
 
       function parseServiceMonth(value) {
@@ -372,13 +382,13 @@
         return `${customer.lat},${customer.lng}`;
       }
 
-      function buildExactDuplicateKey(customer) {
+      function buildMergeKeyFromRow(row) {
         return [
-          (customer.name || "").trim().toLowerCase(),
-          (customer.address || "").trim().toLowerCase(),
-          (customer.postcode || "").trim().toLowerCase(),
-          (customer.city || "").trim().toLowerCase(),
-          (customer.country || "").trim().toLowerCase()
+          normalizeValue(row.name),
+          normalizeValue(row.address),
+          normalizePostcode(row.postcode),
+          normalizeValue(row.city),
+          normalizeValue(row.country)
         ].join("|");
       }
 
@@ -392,13 +402,11 @@
       }
 
       function updateMetrics() {
-        const keys = Object.keys(customers);
         let machines = 0;
         let rood = 0;
         let oranje = 0;
 
-        keys.forEach((key) => {
-          const c = customers[key];
+        customers.forEach((c) => {
           const all = [...c.robotics, ...c.cm];
           machines += all.length;
           all.forEach((m) => {
@@ -407,34 +415,32 @@
           });
         });
 
-        metricLocaties.textContent = keys.length;
+        metricLocaties.textContent = customers.length;
         metricMachines.textContent = machines;
         metricRood.textContent = rood;
         metricOranje.textContent = oranje;
       }
 
-      function getFilteredKeys() {
+      function getFilteredCustomers() {
         const q = search.value.trim().toLowerCase();
-        if (!q) return Object.keys(customers);
+        if (!q) return customers;
 
-        return Object.keys(customers).filter((key) => {
-          const c = customers[key];
+        return customers.filter((c) => {
           const txt = `${c.name} ${c.city} ${c.address || ""} ${c.postcode || ""}`.toLowerCase();
           return txt.includes(q);
         });
       }
 
-      function renderCustomerList(filteredKeys = null) {
-        const keys = filteredKeys || Object.keys(customers);
+      function renderCustomerList(filteredCustomers = null) {
+        const list = filteredCustomers || customers;
         customerList.innerHTML = "";
 
-        if (!keys.length) {
+        if (!list.length) {
           customerList.innerHTML = `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen klanten gevonden</div>`;
           return;
         }
 
-        keys
-          .map((key) => customers[key])
+        [...list]
           .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
           .forEach((customer) => {
             const btn = document.createElement("button");
@@ -449,15 +455,12 @@
           });
       }
 
-      function renderMarkers(filteredKeys = null) {
+      function renderMarkers(filteredCustomers = null) {
         document.querySelectorAll(".dynamic-marker").forEach((el) => el.remove());
 
-        const keys = filteredKeys || Object.keys(customers);
+        const list = filteredCustomers || customers;
 
-        keys.forEach((key) => {
-          const c = customers[key];
-          if (!c) return;
-
+        list.forEach((c) => {
           const pos = projectToEurope(c.lat, c.lng);
           const status = getCustomerStatus(c);
 
@@ -471,7 +474,7 @@
               VDB
             </div>
           `;
-          btn.addEventListener("click", () => renderCustomer(key));
+          btn.addEventListener("click", () => renderCustomer(c.id));
           mapArea.appendChild(btn);
         });
       }
@@ -493,11 +496,11 @@
         });
       }
 
-      function renderCustomer(key) {
-        const c = customers[key];
+      function renderCustomer(customerId) {
+        const c = customers.find((item) => item.id === customerId);
         if (!c) return;
 
-        currentCustomerKey = key;
+        currentCustomerId = customerId;
         const customerAddress = buildCustomerAddress(c);
         const mapsQuery = buildMapsQuery(c);
 
@@ -519,7 +522,7 @@
 
         bindMachineButtons();
         updateMetrics();
-        renderMarkers(getFilteredKeys());
+        renderMarkers(getFilteredCustomers());
       }
 
       function openServiceModal() {
@@ -571,7 +574,7 @@
       }
 
       async function saveCurrentMachine() {
-        if (!currentMachineId || !currentCustomerKey) return;
+        if (!currentMachineId || !currentCustomerId) return;
 
         const now = new Date();
         const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -605,7 +608,7 @@
           console.error(eventError);
         }
 
-        const customer = customers[currentCustomerKey];
+        const customer = customers.find((item) => item.id === currentCustomerId);
         if (customer) {
           [...customer.robotics, ...customer.cm].forEach((machine) => {
             if (machine.id === currentMachineId) {
@@ -620,8 +623,8 @@
         currentMachineName = "";
 
         closeServiceModal();
-        renderCustomer(currentCustomerKey);
-        renderMarkers(getFilteredKeys());
+        renderCustomer(currentCustomerId);
+        renderMarkers(getFilteredCustomers());
         updateMetrics();
         showStatus(`Service opgeslagen voor ${savedName}`, "success");
       }
@@ -649,50 +652,39 @@
           return;
         }
 
-        customers = {};
-        const duplicateGroups = {};
+        const grouped = new Map();
 
         customerRows.forEach((row) => {
-          const draftCustomer = {
-            id: row.id,
-            sourceIds: [row.id],
-            name: row.name || "Onbekend",
-            city: row.city || "",
-            address: row.address || "",
-            postcode: row.postcode || "",
-            country: row.country || "",
-            lat: row.latitude || 50,
-            lng: row.longitude || 5,
-            robotics: [],
-            cm: []
-          };
+          const key = buildMergeKeyFromRow(row);
 
-          const duplicateKey = buildExactDuplicateKey(draftCustomer);
-
-          if (!duplicateGroups[duplicateKey]) {
-            duplicateGroups[duplicateKey] = draftCustomer;
+          if (!grouped.has(key)) {
+            grouped.set(key, {
+              id: row.id,
+              sourceIds: [row.id],
+              name: row.name || "Onbekend",
+              city: row.city || "",
+              address: row.address || "",
+              postcode: row.postcode || "",
+              country: row.country || "",
+              lat: row.latitude || 50,
+              lng: row.longitude || 5,
+              robotics: [],
+              cm: []
+            });
           } else {
-            duplicateGroups[duplicateKey].sourceIds.push(row.id);
+            const existing = grouped.get(key);
+            existing.sourceIds.push(row.id);
 
-            if (!duplicateGroups[duplicateKey].lat && draftCustomer.lat) {
-              duplicateGroups[duplicateKey].lat = draftCustomer.lat;
-            }
-            if (!duplicateGroups[duplicateKey].lng && draftCustomer.lng) {
-              duplicateGroups[duplicateKey].lng = draftCustomer.lng;
-            }
+            if ((!existing.lat || existing.lat === 50) && row.latitude) existing.lat = row.latitude;
+            if ((!existing.lng || existing.lng === 5) && row.longitude) existing.lng = row.longitude;
           }
         });
 
-        Object.values(duplicateGroups).forEach((customer) => {
-          customers[customer.id] = customer;
-        });
+        customers = Array.from(grouped.values());
 
         machineRows.forEach((row) => {
-          const targetCustomer = Object.values(customers).find((customer) =>
-            customer.sourceIds.includes(row.customer_id)
-          );
-
-          if (!targetCustomer) return;
+          const customer = customers.find((item) => item.sourceIds.includes(row.customer_id));
+          if (!customer) return;
 
           const machine = {
             id: row.id,
@@ -702,20 +694,19 @@
           };
 
           if ((row.type || "").toLowerCase() === "cm") {
-            targetCustomer.cm.push(machine);
+            customer.cm.push(machine);
           } else {
-            targetCustomer.robotics.push(machine);
+            customer.robotics.push(machine);
           }
         });
 
         updateMetrics();
-        const filteredKeys = getFilteredKeys();
-        renderMarkers(filteredKeys);
-        renderCustomerList(filteredKeys);
+        const filteredCustomers = getFilteredCustomers();
+        renderMarkers(filteredCustomers);
+        renderCustomerList(filteredCustomers);
 
-        const keys = Object.keys(customers);
-        if (keys.length > 0) {
-          renderCustomer(keys[0]);
+        if (customers.length > 0) {
+          renderCustomer(customers[0].id);
           showStatus("Data geladen", "success");
           setTimeout(hideStatus, 1500);
         } else {
@@ -724,9 +715,9 @@
       }
 
       search.addEventListener("input", () => {
-        const filteredKeys = getFilteredKeys();
-        renderMarkers(filteredKeys);
-        renderCustomerList(filteredKeys);
+        const filteredCustomers = getFilteredCustomers();
+        renderMarkers(filteredCustomers);
+        renderCustomerList(filteredCustomers);
       });
 
       closeModalTop.addEventListener("click", closeServiceModal);
