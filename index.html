@@ -581,6 +581,28 @@
       }
 
       async function saveCurrentMachine() {
+        const fileInput = document.getElementById("photo-input");
+const file = fileInput.files[0];
+
+let photoUrl = null;
+
+if (file) {
+  const fileName = `${Date.now()}-${file.name}`;
+
+  const { data, error } = await supabaseClient.storage
+    .from("service-photos")
+    .upload(fileName, file);
+
+  if (error) {
+    console.error("Upload error:", error);
+  } else {
+    const { data: publicUrlData } = supabaseClient.storage
+      .from("service-photos")
+      .getPublicUrl(fileName);
+
+    photoUrl = publicUrlData.publicUrl;
+  }
+}
         if (!currentMachineId || !currentCustomerId) return;
 
         const now = new Date();
