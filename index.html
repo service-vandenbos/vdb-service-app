@@ -150,18 +150,20 @@
             <div class="mb-2 text-sm text-slate-300">Notitie</div>
             <textarea
               id="service-note"
-              <input
               rows="4"
               class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none"
               placeholder="Bijvoorbeeld: onderhoud uitgevoerd"
             ></textarea>
-<input
-  type="file"
-  id="photo-input"
-  accept="image/*"
-  class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none"
-/>
-            
+          </label>
+
+          <label class="block">
+            <div class="mb-2 text-sm text-slate-300">Foto</div>
+            <input
+              type="file"
+              id="photo-input"
+              accept="image/*"
+              class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none file:mr-4 file:rounded-xl file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-900"
+            />
           </label>
         </div>
 
@@ -225,6 +227,7 @@
       const saveServiceBtn = document.getElementById("save-service");
       const engineerInput = document.getElementById("engineer");
       const noteInput = document.getElementById("service-note");
+      const photoInput = document.getElementById("photo-input");
 
       const historyModal = document.getElementById("history-modal");
       const historyTitle = document.getElementById("history-title");
@@ -351,6 +354,13 @@
         const note = event.note && event.note.trim() ? event.note : "-";
         const engineer = event.engineer_name && event.engineer_name.trim() ? event.engineer_name : "-";
         const month = event.service_month || "-";
+        const photo = event.photo_url
+          ? `
+            <a href="${event.photo_url}" target="_blank" rel="noreferrer" class="mt-3 inline-block">
+              <img src="${event.photo_url}" alt="Service foto" class="max-h-56 rounded-2xl border border-white/10 object-cover" />
+            </a>
+          `
+          : "";
 
         return `
           <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
@@ -362,6 +372,7 @@
             </div>
             <div class="mt-2 text-sm text-slate-300">Monteur: ${engineer}</div>
             <div class="mt-2 text-sm text-slate-300">Notitie: ${note}</div>
+            ${photo}
           </div>
         `;
       }
@@ -387,16 +398,6 @@
         if (address) return [name, address].filter(Boolean).join(", ");
         if (customer.city) return [name, customer.city, customer.country || ""].filter(Boolean).join(", ");
         return `${customer.lat},${customer.lng}`;
-      }
-
-      function buildExactDuplicateKey(row) {
-        return [
-          normalizeValue(row.name),
-          normalizeValue(row.address),
-          normalizeValue(row.postcode),
-          normalizeValue(row.city),
-          normalizeValue(row.country)
-        ].join("|");
       }
 
       function projectToEurope(lat, lng) {
@@ -454,7 +455,7 @@
             btn.className =
               "w-full rounded-2xl border border-white/10 bg-slate-800/60 p-3 text-left transition hover:bg-slate-800";
             btn.innerHTML = `
-              <div class="font-medium">${customer.name || "Onbekend"}</div>
+              <div class="font-medium">${customer.name || "(geen naam)"}</div>
               <div class="mt-1 text-sm text-slate-400">${buildCustomerAddress(customer) || customer.city || ""}</div>
             `;
             btn.addEventListener("click", () => renderCustomer(customer.id));
@@ -511,7 +512,7 @@
         const customerAddress = buildCustomerAddress(c);
         const mapsQuery = buildMapsQuery(c);
 
-        detailName.textContent = c.name || "Onbekend";
+        detailName.textContent = c.name || "(geen naam)";
         detailCity.textContent = c.city || "";
         detailAddress.textContent = customerAddress || "";
         detailStatus.textContent = getCustomerStatus(c);
@@ -542,6 +543,7 @@
         serviceModal.classList.remove("flex");
         engineerInput.value = "Hoofdmonteur";
         noteInput.value = "";
+        photoInput.value = "";
       }
 
       function openHistoryModal() {
@@ -562,7 +564,7 @@
 
         const { data, error } = await supabaseClient
           .from("service_events")
-          .select("service_month, engineer_name, note, created_at")
+          .select("service_month, engineer_name, note, created_at, photo_url")
           .eq("machine_id", machineId)
           .order("created_at", { ascending: false });
 
@@ -580,29 +582,24 @@
         historyList.innerHTML = data.map((event) => historyCard(event)).join("");
       }
 
+      async function uploadPhoto(file) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const filePath = `service-events/${Date.now()}-${safeName}`;
+
+        const { error: uploadError } = await supabaseClient.storage
+          .from("service-photos")
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabaseClient.storage
+          .from("service-photos")
+          .getPublicUrl(filePath);
+
+        return data.publicUrl;
+      }
+
       async function saveCurrentMachine() {
-        const fileInput = document.getElementById("photo-input");
-const file = fileInput.files[0];
-
-let photoUrl = null;
-
-if (file) {
-  const fileName = `${Date.now()}-${file.name}`;
-
-  const { data, error } = await supabaseClient.storage
-    .from("service-photos")
-    .upload(fileName, file);
-
-  if (error) {
-    console.error("Upload error:", error);
-  } else {
-    const { data: publicUrlData } = supabaseClient.storage
-      .from("service-photos")
-      .getPublicUrl(fileName);
-
-    photoUrl = publicUrlData.publicUrl;
-  }
-}
         if (!currentMachineId || !currentCustomerId) return;
 
         const now = new Date();
@@ -611,55 +608,61 @@ if (file) {
         const value = `${month}-${year}`;
         const engineerName = engineerInput.value.trim() || "Hoofdmonteur";
         const note = noteInput.value.trim();
+        const file = photoInput.files && photoInput.files[0] ? photoInput.files[0] : null;
 
-        const { error: updateError } = await supabaseClient
-          .from("machines")
-          .update({ last_service: value })
-          .eq("id", currentMachineId);
+        saveServiceBtn.disabled = true;
+        saveServiceBtn.textContent = "Opslaan...";
 
-        if (updateError) {
-          showStatus("Opslaan van machine mislukt", "error");
-          console.error(updateError);
-          return;
-        }
+        try {
+          let photoUrl = null;
+          if (file) {
+            photoUrl = await uploadPhoto(file);
+          }
 
-        const { error: eventError } = await supabaseClient
-          .from("service_events")
-          .insert({
-            machine_id: currentMachineId,
-            service_month: value,
-            engineer_name: engineerName,
-            note: note
-          });
+          const { error: updateError } = await supabaseClient
+            .from("machines")
+            .update({ last_service: value })
+            .eq("id", currentMachineId);
 
-        if (eventError) {
-          showStatus("Machine opgeslagen, maar service historie opslaan mislukt", "error");
-          console.error(eventError);
-        } else {
-          showStatus(`Service opgeslagen voor ${currentMachineName}`, "success");
-        }
+          if (updateError) throw updateError;
 
-        const customer = customers.find((item) => item.id === currentCustomerId);
-        if (customer) {
-          [...customer.robotics, ...customer.cm].forEach((machine) => {
-            if (machine.id === currentMachineId) {
-              machine.lastService = value;
-              machine.status = "Groen";
-            }
-          });
-        }
+          const { error: eventError } = await supabaseClient
+            .from("service_events")
+            .insert({
+              machine_id: currentMachineId,
+              service_month: value,
+              engineer_name: engineerName,
+              note: note,
+              photo_url: photoUrl
+            });
 
-        const savedName = currentMachineName;
-        currentMachineId = null;
-        currentMachineName = "";
+          if (eventError) throw eventError;
 
-        closeServiceModal();
-        renderCustomer(currentCustomerId);
-        renderMarkers(getFilteredCustomers());
-        updateMetrics();
+          const customer = customers.find((item) => item.id === currentCustomerId);
+          if (customer) {
+            [...customer.robotics, ...customer.cm].forEach((machine) => {
+              if (machine.id === currentMachineId) {
+                machine.lastService = value;
+                machine.status = "Groen";
+              }
+            });
+          }
 
-        if (!eventError) {
+          const savedName = currentMachineName;
+          currentMachineId = null;
+          currentMachineName = "";
+
+          closeServiceModal();
+          renderCustomer(currentCustomerId);
+          renderMarkers(getFilteredCustomers());
+          updateMetrics();
           showStatus(`Service opgeslagen voor ${savedName}`, "success");
+        } catch (error) {
+          console.error(error);
+          showStatus(`Opslaan mislukt: ${error.message || "onbekende fout"}`, "error");
+        } finally {
+          saveServiceBtn.disabled = false;
+          saveServiceBtn.textContent = "Opslaan";
         }
       }
 
@@ -678,7 +681,8 @@ if (file) {
 
         const { data: customerRows, error: customerError } = await supabaseClient
           .from("customers")
-          .select("id, name, city, address, postcode, country, latitude, longitude");
+          .select("id, name, city, address, postcode, country, latitude, longitude")
+          .not("name", "is", null);
 
         if (customerError) {
           showStatus("Fout bij laden van customers", "error");
@@ -699,13 +703,14 @@ if (file) {
         const grouped = new Map();
 
         customerRows.forEach((row) => {
-         const key = normalizeValue(row.name);
+          const nameValue = row.name && row.name.trim() !== "" ? row.name : "(geen naam)";
+          const key = normalizeValue(nameValue || row.city || row.id);
 
           if (!grouped.has(key)) {
             grouped.set(key, {
               id: row.id,
               sourceIds: [row.id],
-              name: row.name || "Onbekend",
+              name: nameValue,
               city: row.city || "",
               address: row.address || "",
               postcode: row.postcode || "",
