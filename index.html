@@ -74,7 +74,7 @@
 
             <div class="mt-4">
               <div class="mb-2 text-sm text-slate-300">Klantenlijst</div>
-              <div id="customer-list" class="max-h-[180px] space-y-2 overflow-auto pr-1"></div>
+              <div id="customer-list" class="max-h-[220px] space-y-2 overflow-auto pr-1"></div>
             </div>
           </section>
 
@@ -259,14 +259,6 @@
           .trim();
       }
 
-      function normalizePostcode(value) {
-        return String(value || "")
-          .toLowerCase()
-          .replace(/\s+/g, "")
-          .replace(/[^a-z0-9]/g, "")
-          .trim();
-      }
-
       function parseServiceMonth(value) {
         if (!value || /^-+$/.test(String(value).trim())) return null;
         const match = String(value).trim().match(/^(\d{1,2})[-/](\d{4})$/);
@@ -321,6 +313,7 @@
               <div>
                 <div class="font-medium">${machine.name}</div>
                 <div class="mt-1 text-sm text-slate-300">Laatste service: ${machine.lastService || "---"}</div>
+                ${machine.customerLabel ? `<div class="mt-1 text-xs text-slate-400">${machine.customerLabel}</div>` : ""}
               </div>
               ${statusPill(machine.status)}
             </div>
@@ -365,28 +358,34 @@
         `;
       }
 
-      function buildCustomerAddress(customer) {
-        const street = (customer.address || "").trim();
-        const postcode = (customer.postcode || "").trim();
-        const city = (customer.city || "").trim();
-        const country = (customer.country || "").trim();
+      function buildAddressParts(row) {
+        const street = String(row.address || "").trim();
+        const postcode = String(row.postcode || "").trim();
+        const city = String(row.city || "").trim();
+        const country = String(row.country || "").trim();
         const line2 = [postcode, city].filter(Boolean).join(" ").trim();
-        return [street, line2, country].filter(Boolean).join(", ");
+        const full = [street, line2, country].filter(Boolean).join(", ");
+        return { street, postcode, city, country, full };
+      }
+
+      function buildCustomerAddress(customer) {
+        const parts = buildAddressParts(customer);
+        return parts.full;
       }
 
       function buildMapsQuery(customer) {
         const address = buildCustomerAddress(customer);
-        const name = (customer.name || "").trim();
+        const name = String(customer.name || "").trim();
         if (address) return [name, address].filter(Boolean).join(", ");
         if (customer.city) return [name, customer.city, customer.country || ""].filter(Boolean).join(", ");
         return `${customer.lat},${customer.lng}`;
       }
 
-      function buildMergeKeyFromRow(row) {
+      function buildExactDuplicateKey(row) {
         return [
           normalizeValue(row.name),
           normalizeValue(row.address),
-          normalizePostcode(row.postcode),
+          normalizeValue(row.postcode),
           normalizeValue(row.city),
           normalizeValue(row.country)
         ].join("|");
@@ -655,7 +654,7 @@
         const grouped = new Map();
 
         customerRows.forEach((row) => {
-          const key = buildMergeKeyFromRow(row);
+          const key = buildExactDuplicateKey(row);
 
           if (!grouped.has(key)) {
             grouped.set(key, {
@@ -666,17 +665,14 @@
               address: row.address || "",
               postcode: row.postcode || "",
               country: row.country || "",
-              lat: row.latitude || 50,
-              lng: row.longitude || 5,
+              lat: Number(row.latitude) || 50,
+              lng: Number(row.longitude) || 5,
               robotics: [],
               cm: []
             });
           } else {
             const existing = grouped.get(key);
             existing.sourceIds.push(row.id);
-
-            if ((!existing.lat || existing.lat === 50) && row.latitude) existing.lat = row.latitude;
-            if ((!existing.lng || existing.lng === 5) && row.longitude) existing.lng = row.longitude;
           }
         });
 
@@ -690,7 +686,8 @@
             id: row.id,
             name: row.machine_name || "Machine",
             lastService: row.last_service || "---",
-            status: machineStatus(row.last_service || "---")
+            status: machineStatus(row.last_service || "---"),
+            customerLabel: customer.name
           };
 
           if ((row.type || "").toLowerCase() === "cm") {
