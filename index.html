@@ -669,7 +669,7 @@
         const grouped = new Map();
 
         customerRows.forEach((row) => {
-          const key = buildExactDuplicateKey(row);
+         const key = normalizeValue(row.name);
 
           if (!grouped.has(key)) {
             grouped.set(key, {
