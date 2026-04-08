@@ -605,6 +605,8 @@
         if (eventError) {
           showStatus("Machine opgeslagen, maar service historie opslaan mislukt", "error");
           console.error(eventError);
+        } else {
+          showStatus(`Service opgeslagen voor ${currentMachineName}`, "success");
         }
 
         const customer = customers.find((item) => item.id === currentCustomerId);
@@ -625,7 +627,20 @@
         renderCustomer(currentCustomerId);
         renderMarkers(getFilteredCustomers());
         updateMetrics();
-        showStatus(`Service opgeslagen voor ${savedName}`, "success");
+
+        if (!eventError) {
+          showStatus(`Service opgeslagen voor ${savedName}`, "success");
+        }
+      }
+
+      async function testConnection() {
+        const { data, error } = await supabaseClient
+          .from("machines")
+          .select("id, machine_name")
+          .limit(5);
+
+        console.log("TEST DATA:", data);
+        console.log("TEST ERROR:", error);
       }
 
       async function loadData() {
@@ -731,6 +746,7 @@
         if (e.target === historyModal) closeHistoryModal();
       });
 
+      testConnection();
       loadData();
     </script>
   </body>
