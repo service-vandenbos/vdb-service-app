@@ -1,572 +1,531 @@
 <!doctype html>
 <html lang="nl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Van den Bos Robotics Service</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  </head>
-
-  <body class="bg-slate-950 text-white">
-    <div class="min-h-screen p-6">
-      <div class="mx-auto max-w-7xl">
-        <div class="mb-6 rounded-[28px] border border-white/10 bg-slate-900 px-8 py-7">
-          <div class="flex flex-col gap-3">
-            <div class="text-xs uppercase tracking-[0.45em] text-cyan-300">Service App</div>
-            <div class="flex flex-wrap items-end gap-x-3 gap-y-1 leading-none">
-              <span class="text-4xl font-extrabold tracking-tight text-white md:text-6xl">VAN DEN</span>
-              <span class="text-4xl font-extrabold tracking-tight text-green-500 md:text-6xl">BOS</span>
-            </div>
-            <div class="pl-1 text-2xl font-light tracking-[0.35em] text-slate-300 md:text-4xl">
-              robotics <span class="font-medium tracking-normal text-white">Service</span>
-            </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Van den Bos Robotics Service</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-950 text-white">
+  <div class="min-h-screen p-6">
+    <div class="mx-auto max-w-7xl">
+      <header class="mb-6 rounded-[28px] border border-white/10 bg-slate-900 px-8 py-7 shadow-2xl shadow-cyan-950/20">
+        <div class="flex flex-col gap-3">
+          <div class="text-xs uppercase tracking-[0.45em] text-cyan-300">Service App</div>
+          <div class="flex flex-wrap items-end gap-x-3 gap-y-1 leading-none">
+            <span class="text-4xl font-extrabold tracking-tight text-white md:text-6xl">VAN DEN</span>
+            <span class="text-4xl font-extrabold tracking-tight text-green-500 md:text-6xl">BOS</span>
+          </div>
+          <div class="pl-1 text-2xl font-light tracking-[0.35em] text-slate-300 md:text-4xl">
+            robotics <span class="font-medium tracking-normal text-white">Service</span>
           </div>
         </div>
+      </header>
 
-        <div id="status-bar" class="mb-6 hidden rounded-2xl border px-4 py-3 text-sm"></div>
+      <div id="status-bar" class="mb-6 hidden rounded-2xl border px-4 py-3 text-sm"></div>
 
-        <div class="mb-6 grid gap-4 md:grid-cols-4">
-          <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-            <div class="text-sm text-slate-300">Locaties</div>
-            <div id="metric-locaties" class="mt-2 text-3xl font-semibold">0</div>
-          </div>
-          <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-            <div class="text-sm text-slate-300">Machines</div>
-            <div id="metric-machines" class="mt-2 text-3xl font-semibold">0</div>
-          </div>
-          <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-            <div class="text-sm text-slate-300">Rood</div>
-            <div id="metric-rood" class="mt-2 text-3xl font-semibold text-red-400">0</div>
-          </div>
-          <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-            <div class="text-sm text-slate-300">Oranje</div>
-            <div id="metric-oranje" class="mt-2 text-3xl font-semibold text-amber-400">0</div>
-          </div>
+      <section class="mb-6 grid gap-4 md:grid-cols-4">
+        <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
+          <div class="text-sm text-slate-300">Locaties</div>
+          <div id="metric-locaties" class="mt-2 text-3xl font-semibold">0</div>
         </div>
-
-        <div class="grid gap-6 xl:grid-cols-[1.2fr_0.95fr]">
-          <section class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-            <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h2 class="text-xl font-semibold">Europa kaart</h2>
-                <p class="text-sm text-slate-300">Klik op een klant of kies uit de lijst</p>
-              </div>
-
-              <input
-                id="search"
-                placeholder="Zoek klant"
-                class="rounded-2xl border border-white/10 bg-slate-800 px-4 py-2 text-sm outline-none"
-              />
-            </div>
-
-            <div
-              id="map-area"
-              class="relative h-[420px] overflow-hidden rounded-[30px] border border-white/10 bg-slate-900"
-            >
-              <div class="absolute inset-0 z-0 flex items-center justify-center p-4 pointer-events-none">
-                <div class="w-full h-full flex items-center justify-center opacity-30">
-  <svg viewBox="0 0 800 600" class="w-full h-full">
-    <rect width="800" height="600" fill="#0f172a"/>
-    <text x="50%" y="50%" text-anchor="middle" fill="#334155" font-size="40">
-      EUROPA KAART
-    </text>
-  </svg>
-</div>
-                  class="block max-h-full max-w-full object-contain opacity-40"
-                />
-              </div>
-
-              <div class="absolute inset-0 z-10 pointer-events-none bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_transparent_35%)]"></div>
-
-              <div class="absolute inset-0 z-20 pointer-events-none opacity-15">
-                <div class="absolute left-[10%] top-[18%] h-[42%] w-[28%] rounded-[48%] border border-cyan-200/15"></div>
-                <div class="absolute left-[28%] top-[33%] h-[17%] w-[12%] rounded-[44%] border border-cyan-200/15"></div>
-                <div class="absolute left-[41%] top-[23%] h-[34%] w-[22%] rounded-[44%] border border-cyan-200/15"></div>
-                <div class="absolute left-[53%] top-[57%] h-[12%] w-[9%] rounded-[50%] border border-cyan-200/15"></div>
-              </div>
-            </div>
-
-            <div class="mt-4">
-              <div class="mb-2 text-sm text-slate-300">Klantenlijst</div>
-              <div id="customer-list" class="max-h-[220px] space-y-2 overflow-auto pr-1"></div>
-            </div>
-          </section>
-
-          <aside class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-            <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Klantdetail</div>
-
-            <h2 id="detail-name" class="mt-2 text-2xl font-semibold">Laden...</h2>
-            <p id="detail-city" class="mt-1 text-sm text-slate-300"></p>
-            <p id="detail-address" class="mt-1 text-sm text-slate-400"></p>
-
-            <div class="mt-5 grid gap-3 sm:grid-cols-2">
-              <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
-                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Status</div>
-                <div id="detail-status" class="mt-2 text-base font-medium">-</div>
-              </div>
-
-              <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
-                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Machines</div>
-                <div id="detail-count" class="mt-2 text-base font-medium">0</div>
-              </div>
-            </div>
-
-            <div class="mt-5 flex flex-wrap gap-2">
-              <a
-                id="maps-link"
-                href="#"
-                target="_blank"
-                rel="noreferrer"
-                class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950"
-              >
-                Maps
-              </a>
-            </div>
-
-            <div class="mt-6">
-              <h3 class="mb-3 text-lg font-semibold">Robotics</h3>
-              <div id="robotics-list" class="space-y-3"></div>
-            </div>
-
-            <div class="mt-6">
-              <h3 class="mb-3 text-lg font-semibold">CM</h3>
-              <div id="cm-list" class="space-y-3"></div>
-            </div>
-          </aside>
+        <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
+          <div class="text-sm text-slate-300">Machines</div>
+          <div id="metric-machines" class="mt-2 text-3xl font-semibold">0</div>
         </div>
+        <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
+          <div class="text-sm text-slate-300">Rood</div>
+          <div id="metric-rood" class="mt-2 text-3xl font-semibold text-red-400">0</div>
+        </div>
+        <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
+          <div class="text-sm text-slate-300">Oranje</div>
+          <div id="metric-oranje" class="mt-2 text-3xl font-semibold text-amber-400">0</div>
+        </div>
+      </section>
+
+      <main class="grid gap-6 xl:grid-cols-[1.2fr_0.95fr]">
+        <section class="rounded-3xl border border-white/10 bg-slate-900 p-5">
+          <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 class="text-xl font-semibold">Europa kaart</h2>
+              <p class="text-sm text-slate-300">Klik op een klant of kies uit de lijst</p>
+            </div>
+            <input id="search" placeholder="Zoek klant" class="rounded-2xl border border-white/10 bg-slate-800 px-4 py-2 text-sm outline-none" />
+          </div>
+
+          <div id="map-area" class="relative h-[420px] overflow-hidden rounded-[30px] border border-white/10 bg-slate-900">
+            <div class="absolute inset-0 z-0 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.10),_transparent_35%),linear-gradient(180deg,_#0f172a_0%,_#111827_100%)]"></div>
+            <svg viewBox="0 0 1000 700" class="absolute inset-0 z-10 h-full w-full opacity-30 pointer-events-none">
+              <g fill="none" stroke="#94a3b8" stroke-width="3">
+                <path d="M144 170 L186 140 L245 134 L302 162 L339 210 L334 246 L299 287 L241 282 L206 244 L167 230 L146 196 Z"/>
+                <path d="M308 182 L333 173 L349 186 L346 208 L324 212 L309 198 Z"/>
+                <path d="M351 140 L420 112 L489 119 L540 154 L592 161 L648 184 L692 228 L698 276 L662 322 L604 346 L544 333 L510 311 L482 267 L443 240 L399 220 L361 182 Z"/>
+                <path d="M531 343 L582 355 L608 386 L594 421 L550 432 L520 407 L513 371 Z"/>
+                <path d="M404 235 L452 245 L484 267 L504 304 L484 333 L433 339 L392 314 L380 280 Z"/>
+                <path d="M573 191 L620 189 L651 212 L659 247 L643 274 L604 280 L575 265 L565 232 Z"/>
+                <path d="M709 209 L770 212 L810 241 L812 284 L772 304 L722 300 L693 268 L694 229 Z"/>
+                <path d="M226 330 L270 338 L291 366 L286 401 L246 412 L212 390 L206 358 Z"/>
+                <path d="M196 106 L214 94 L230 102 L226 120 L206 122 Z"/>
+                <path d="M743 118 L774 111 L793 130 L785 153 L758 157 L740 142 Z"/>
+              </g>
+            </svg>
+          </div>
+
+          <div class="mt-4">
+            <div class="mb-2 text-sm text-slate-300">Klantenlijst</div>
+            <div id="customer-list" class="max-h-[220px] space-y-2 overflow-auto pr-1"></div>
+          </div>
+        </section>
+
+        <aside class="rounded-3xl border border-white/10 bg-slate-900 p-5">
+          <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Klantdetail</div>
+          <h2 id="detail-name" class="mt-2 text-2xl font-semibold">Laden...</h2>
+          <p id="detail-city" class="mt-1 text-sm text-slate-300"></p>
+          <p id="detail-address" class="mt-1 text-sm text-slate-400"></p>
+
+          <div class="mt-5 grid gap-3 sm:grid-cols-2">
+            <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
+              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Status</div>
+              <div id="detail-status" class="mt-2 text-base font-medium">-</div>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
+              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Machines</div>
+              <div id="detail-count" class="mt-2 text-base font-medium">0</div>
+            </div>
+          </div>
+
+          <div class="mt-5 flex flex-wrap gap-2">
+            <a id="maps-link" href="#" target="_blank" rel="noreferrer" class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">Maps</a>
+          </div>
+
+          <div class="mt-6">
+            <h3 class="mb-3 text-lg font-semibold">Robotics</h3>
+            <div id="robotics-list" class="space-y-3"></div>
+          </div>
+
+          <div class="mt-6">
+            <h3 class="mb-3 text-lg font-semibold">CM</h3>
+            <div id="cm-list" class="space-y-3"></div>
+          </div>
+        </aside>
+      </main>
+    </div>
+  </div>
+
+  <div id="service-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
+    <div class="w-full max-w-lg rounded-3xl border border-white/10 bg-slate-900 p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Service</div>
+          <h3 id="modal-title" class="mt-2 text-2xl font-semibold">Service registreren</h3>
+        </div>
+        <button id="close-modal-top" class="rounded-xl border border-white/10 px-3 py-2 text-sm">Sluiten</button>
+      </div>
+
+      <div class="mt-5 grid gap-4">
+        <label class="block">
+          <div class="mb-2 text-sm text-slate-300">Monteur</div>
+          <input id="engineer" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none" value="Hoofdmonteur" />
+        </label>
+
+        <label class="block">
+          <div class="mb-2 text-sm text-slate-300">Notitie</div>
+          <textarea id="service-note" rows="4" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none" placeholder="Bijvoorbeeld: onderhoud uitgevoerd"></textarea>
+        </label>
+
+        <label class="block">
+          <div class="mb-2 text-sm text-slate-300">Foto</div>
+          <input type="file" id="photo-input" accept="image/*" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none file:mr-4 file:rounded-xl file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-900" />
+        </label>
+      </div>
+
+      <div class="mt-5 flex justify-end">
+        <button id="save-service" class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">Opslaan</button>
       </div>
     </div>
+  </div>
 
-    <div id="service-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
-      <div class="w-full max-w-lg rounded-3xl border border-white/10 bg-slate-900 p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Service</div>
-            <h3 id="modal-title" class="mt-2 text-2xl font-semibold">Service registreren</h3>
-          </div>
-
-          <button id="close-modal-top" class="rounded-xl border border-white/10 px-3 py-2 text-sm">
-            Sluiten
-          </button>
+  <div id="history-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
+    <div class="w-full max-w-2xl rounded-3xl border border-white/10 bg-slate-900 p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Historie</div>
+          <h3 id="history-title" class="mt-2 text-2xl font-semibold">Service historie</h3>
         </div>
+        <button id="close-history-top" class="rounded-xl border border-white/10 px-3 py-2 text-sm">Sluiten</button>
+      </div>
 
-        <div class="mt-5 grid gap-4">
-          <label class="block">
-            <div class="mb-2 text-sm text-slate-300">Monteur</div>
-            <input
-              id="engineer"
-              class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none"
-              value="Hoofdmonteur"
-            />
-          </label>
+      <div id="history-list" class="mt-5 max-h-[60vh] space-y-3 overflow-auto"></div>
 
-          <label class="block">
-            <div class="mb-2 text-sm text-slate-300">Notitie</div>
-            <textarea
-              id="service-note"
-              rows="4"
-              class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none"
-              placeholder="Bijvoorbeeld: onderhoud uitgevoerd"
-            ></textarea>
-          </label>
-
-          <label class="block">
-            <div class="mb-2 text-sm text-slate-300">Foto</div>
-            <input
-              type="file"
-              id="photo-input"
-              accept="image/*"
-              class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none file:mr-4 file:rounded-xl file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-900"
-            />
-          </label>
-        </div>
-
-        <div class="mt-5 flex justify-end">
-          <button id="save-service" class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">
-            Opslaan
-          </button>
-        </div>
+      <div class="mt-5 flex justify-end">
+        <button id="close-history-bottom" class="rounded-2xl border border-white/10 px-4 py-2 text-sm">Sluiten</button>
       </div>
     </div>
+  </div>
 
-    <div id="history-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
-      <div class="w-full max-w-2xl rounded-3xl border border-white/10 bg-slate-900 p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Historie</div>
-            <h3 id="history-title" class="mt-2 text-2xl font-semibold">Service historie</h3>
+  <script>
+    const SUPABASE_URL = "https://tbtoaeraevuygajyaggj.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidG9hZXJhZXZ1eWdhanlhZ2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MDUyNzksImV4cCI6MjA5MDA4MTI3OX0.D8gKf3hIwQnP8GULWgN2pINrttdR_oUc_WSK50SQl9c";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const statusBar = document.getElementById("status-bar");
+    const mapArea = document.getElementById("map-area");
+    const customerList = document.getElementById("customer-list");
+    const detailName = document.getElementById("detail-name");
+    const detailCity = document.getElementById("detail-city");
+    const detailAddress = document.getElementById("detail-address");
+    const detailStatus = document.getElementById("detail-status");
+    const detailCount = document.getElementById("detail-count");
+    const roboticsList = document.getElementById("robotics-list");
+    const cmList = document.getElementById("cm-list");
+    const search = document.getElementById("search");
+    const mapsLink = document.getElementById("maps-link");
+
+    const metricLocaties = document.getElementById("metric-locaties");
+    const metricMachines = document.getElementById("metric-machines");
+    const metricRood = document.getElementById("metric-rood");
+    const metricOranje = document.getElementById("metric-oranje");
+
+    const serviceModal = document.getElementById("service-modal");
+    const modalTitle = document.getElementById("modal-title");
+    const closeModalTop = document.getElementById("close-modal-top");
+    const saveServiceBtn = document.getElementById("save-service");
+    const engineerInput = document.getElementById("engineer");
+    const noteInput = document.getElementById("service-note");
+    const photoInput = document.getElementById("photo-input");
+
+    const historyModal = document.getElementById("history-modal");
+    const historyTitle = document.getElementById("history-title");
+    const historyList = document.getElementById("history-list");
+    const closeHistoryTop = document.getElementById("close-history-top");
+    const closeHistoryBottom = document.getElementById("close-history-bottom");
+
+    let customers = [];
+    let currentCustomerId = null;
+    let currentMachineId = null;
+    let currentMachineName = "";
+
+    function showStatus(message, type = "info") {
+      statusBar.className = "mb-6 rounded-2xl border px-4 py-3 text-sm";
+      statusBar.classList.remove("hidden");
+      if (type === "error") {
+        statusBar.classList.add("border-red-500/30", "bg-red-500/10", "text-red-100");
+      } else if (type === "success") {
+        statusBar.classList.add("border-emerald-500/30", "bg-emerald-500/10", "text-emerald-100");
+      } else {
+        statusBar.classList.add("border-cyan-500/30", "bg-cyan-500/10", "text-cyan-100");
+      }
+      statusBar.textContent = message;
+    }
+
+    function hideStatus() { statusBar.classList.add("hidden"); }
+
+    function normalizeValue(value) {
+      return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ß/g, "ss").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+    }
+
+    function parseServiceMonth(value) {
+      if (!value || /^-+$/.test(String(value).trim())) return null;
+      const match = String(value).trim().match(/^(\d{1,2})[-/](\d{4})$/);
+      if (!match) return null;
+      return new Date(Number(match[2]), Number(match[1]) - 1, 1);
+    }
+
+    function monthDiff(start, end) {
+      if (!start || !end) return 999;
+      return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+    }
+
+    function machineStatus(lastService) {
+      const parsed = parseServiceMonth(lastService);
+      if (!parsed) return "Rood";
+      const now = new Date();
+      const months = monthDiff(parsed, now);
+      if (months >= 12) return "Rood";
+      if (months >= 9) return "Oranje";
+      return "Groen";
+    }
+
+    function getCustomerStatus(customer) {
+      const all = [...customer.robotics, ...customer.cm];
+      if (!all.length) return "Groen";
+      if (all.some((m) => m.status === "Rood")) return "Rood";
+      if (all.some((m) => m.status === "Oranje")) return "Oranje";
+      return "Groen";
+    }
+
+    function markerColorClass(status) {
+      if (status === "Rood") return "bg-red-500";
+      if (status === "Oranje") return "bg-amber-400";
+      return "bg-emerald-500";
+    }
+
+    function statusPill(status) {
+      const cls = status === "Rood" ? "bg-red-500/20 text-red-100" : status === "Oranje" ? "bg-amber-500/20 text-amber-100" : "bg-emerald-500/20 text-emerald-100";
+      return `<span class="rounded-full px-3 py-1 text-xs font-semibold ${cls}">${status}</span>`;
+    }
+
+    function machineCard(machine) {
+      return `
+        <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="font-medium">${machine.name}</div>
+              <div class="mt-1 text-sm text-slate-300">Laatste service: ${machine.lastService || "---"}</div>
+              ${machine.customerLabel ? `<div class="mt-1 text-xs text-slate-400">${machine.customerLabel}</div>` : ""}
+            </div>
+            ${statusPill(machine.status)}
           </div>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button class="service-btn rounded-xl border border-white/10 px-3 py-2 text-sm" data-id="${machine.id}" data-name="${machine.name}">Service</button>
+            <button class="history-btn rounded-xl border border-white/10 px-3 py-2 text-sm" data-id="${machine.id}" data-name="${machine.name}">Historie</button>
+          </div>
+        </div>`;
+    }
 
-          <button id="close-history-top" class="rounded-xl border border-white/10 px-3 py-2 text-sm">
-            Sluiten
-          </button>
-        </div>
+    function historyCard(event) {
+      const note = event.note && event.note.trim() ? event.note : "-";
+      const engineer = event.engineer_name && event.engineer_name.trim() ? event.engineer_name : "-";
+      const month = event.service_month || "-";
+      const photo = event.photo_url ? `<a href="${event.photo_url}" target="_blank" rel="noreferrer" class="mt-3 inline-block"><img src="${event.photo_url}" alt="Service foto" class="max-h-56 rounded-2xl border border-white/10 object-cover" /></a>` : "";
+      return `<div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4"><div class="flex flex-wrap items-center justify-between gap-3"><div class="font-medium">${month}</div><div class="text-xs text-slate-400">${event.created_at ? new Date(event.created_at).toLocaleString("nl-NL") : ""}</div></div><div class="mt-2 text-sm text-slate-300">Monteur: ${engineer}</div><div class="mt-2 text-sm text-slate-300">Notitie: ${note}</div>${photo}</div>`;
+    }
 
-        <div id="history-list" class="mt-5 max-h-[60vh] space-y-3 overflow-auto"></div>
+    function buildAddressParts(row) {
+      const street = String(row.address || "").trim();
+      const postcode = String(row.postcode || "").trim();
+      const city = String(row.city || "").trim();
+      const country = String(row.country || "").trim();
+      const line2 = [postcode, city].filter(Boolean).join(" ").trim();
+      const full = [street, line2, country].filter(Boolean).join(", ");
+      return { full };
+    }
 
-        <div class="mt-5 flex justify-end">
-          <button id="close-history-bottom" class="rounded-2xl border border-white/10 px-4 py-2 text-sm">
-            Sluiten
-          </button>
-        </div>
-      </div>
-    </div>
+    function buildCustomerAddress(customer) { return buildAddressParts(customer).full; }
 
-    <script>
-      const SUPABASE_URL = "https://tbtoaeraevuygajyaggj.supabase.co";
-      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidG9hZXJhZXZ1eWdhanlhZ2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MDUyNzksImV4cCI6MjA5MDA4MTI3OX0.D8gKf3hIwQnP8GULWgN2pINrttdR_oUc_WSK50SQl9c";
-      const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    function buildMapsQuery(customer) {
+      const address = buildCustomerAddress(customer);
+      const name = String(customer.name || "").trim();
+      if (address) return [name, address].filter(Boolean).join(", ");
+      if (customer.city) return [name, customer.city, customer.country || ""].filter(Boolean).join(", ");
+      return `${customer.lat},${customer.lng}`;
+    }
 
-      const statusBar = document.getElementById("status-bar");
-      const mapArea = document.getElementById("map-area");
-      const customerList = document.getElementById("customer-list");
-      const detailName = document.getElementById("detail-name");
-      const detailCity = document.getElementById("detail-city");
-      const detailAddress = document.getElementById("detail-address");
-      const detailStatus = document.getElementById("detail-status");
-      const detailCount = document.getElementById("detail-count");
-      const roboticsList = document.getElementById("robotics-list");
-      const cmList = document.getElementById("cm-list");
-      const search = document.getElementById("search");
-      const mapsLink = document.getElementById("maps-link");
+    function projectToEurope(lat, lng) {
+      const minLat = 35, maxLat = 71, minLng = -12, maxLng = 32;
+      const x = ((Number(lng) - minLng) / (maxLng - minLng)) * 100;
+      const y = 100 - ((Number(lat) - minLat) / (maxLat - minLat)) * 100;
+      return { left: `${Math.max(4, Math.min(96, x))}%`, top: `${Math.max(6, Math.min(94, y))}%` };
+    }
 
-      const metricLocaties = document.getElementById("metric-locaties");
-      const metricMachines = document.getElementById("metric-machines");
-      const metricRood = document.getElementById("metric-rood");
-      const metricOranje = document.getElementById("metric-oranje");
+    function updateMetrics() {
+      let machines = 0, rood = 0, oranje = 0;
+      customers.forEach((c) => {
+        const all = [...c.robotics, ...c.cm];
+        machines += all.length;
+        all.forEach((m) => { if (m.status === "Rood") rood++; if (m.status === "Oranje") oranje++; });
+      });
+      metricLocaties.textContent = customers.length;
+      metricMachines.textContent = machines;
+      metricRood.textContent = rood;
+      metricOranje.textContent = oranje;
+    }
 
-      const serviceModal = document.getElementById("service-modal");
-      const modalTitle = document.getElementById("modal-title");
-      const closeModalTop = document.getElementById("close-modal-top");
-      const saveServiceBtn = document.getElementById("save-service");
-      const engineerInput = document.getElementById("engineer");
-      const noteInput = document.getElementById("service-note");
-      const photoInput = document.getElementById("photo-input");
+    function getFilteredCustomers() {
+      const q = search.value.trim().toLowerCase();
+      if (!q) return customers;
+      return customers.filter((c) => `${c.name} ${c.city} ${c.address || ""} ${c.postcode || ""}`.toLowerCase().includes(q));
+    }
 
-      const historyModal = document.getElementById("history-modal");
-      const historyTitle = document.getElementById("history-title");
-      const historyList = document.getElementById("history-list");
-      const closeHistoryTop = document.getElementById("close-history-top");
-      const closeHistoryBottom = document.getElementById("close-history-bottom");
-
-      let customers = [];
-      let currentCustomerId = null;
-      let currentMachineId = null;
-      let currentMachineName = "";
-
-      function showStatus(message, type = "info") {
-        statusBar.className = "mb-6 rounded-2xl border px-4 py-3 text-sm";
-        statusBar.classList.remove("hidden");
-        if (type === "error") {
-          statusBar.classList.add("border-red-500/30", "bg-red-500/10", "text-red-100");
-        } else if (type === "success") {
-          statusBar.classList.add("border-emerald-500/30", "bg-emerald-500/10", "text-emerald-100");
-        } else {
-          statusBar.classList.add("border-cyan-500/30", "bg-cyan-500/10", "text-cyan-100");
-        }
-        statusBar.textContent = message;
+    function renderCustomerList(filteredCustomers = null) {
+      const list = filteredCustomers || customers;
+      customerList.innerHTML = "";
+      if (!list.length) {
+        customerList.innerHTML = `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen klanten gevonden</div>`;
+        return;
       }
 
-      function hideStatus() { statusBar.classList.add("hidden"); }
+      [...list].sort((a, b) => (a.name || "").localeCompare(b.name || "")).forEach((customer) => {
+        const btn = document.createElement("button");
+        btn.className = "w-full rounded-2xl border border-white/10 bg-slate-800/60 p-3 text-left transition hover:bg-slate-800";
+        btn.innerHTML = `<div class="font-medium">${customer.name || "(geen naam)"}</div><div class="mt-1 text-sm text-slate-400">${buildCustomerAddress(customer) || customer.city || ""}</div>`;
+        btn.addEventListener("click", () => renderCustomer(customer.id));
+        customerList.appendChild(btn);
+      });
+    }
 
-      function normalizeValue(value) {
-        return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ß/g, "ss").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+    function renderMarkers(filteredCustomers = null) {
+      document.querySelectorAll(".dynamic-marker").forEach((el) => el.remove());
+      (filteredCustomers || customers).forEach((c) => {
+        const pos = projectToEurope(c.lat, c.lng);
+        const status = getCustomerStatus(c);
+        const btn = document.createElement("button");
+        btn.className = "dynamic-marker absolute z-30 -translate-x-1/2 -translate-y-1/2";
+        btn.style.left = pos.left;
+        btn.style.top = pos.top;
+        btn.title = `${c.name} — ${buildCustomerAddress(c)}`;
+        btn.innerHTML = `<div class="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg ${markerColorClass(status)}">VDB</div>`;
+        btn.addEventListener("click", () => renderCustomer(c.id));
+        mapArea.appendChild(btn);
+      });
+    }
+
+    function bindMachineButtons() {
+      document.querySelectorAll(".service-btn").forEach((btn) => btn.addEventListener("click", () => {
+        currentMachineId = btn.dataset.id;
+        currentMachineName = btn.dataset.name;
+        modalTitle.textContent = `Service registreren - ${currentMachineName}`;
+        openServiceModal();
+      }));
+
+      document.querySelectorAll(".history-btn").forEach((btn) => btn.addEventListener("click", () => openHistory(btn.dataset.id, btn.dataset.name)));
+    }
+
+    function renderCustomer(customerId) {
+      const c = customers.find((item) => item.id === customerId);
+      if (!c) return;
+
+      currentCustomerId = customerId;
+      detailName.textContent = c.name || "(geen naam)";
+      detailCity.textContent = c.city || "";
+      detailAddress.textContent = buildCustomerAddress(c) || "";
+      detailStatus.textContent = getCustomerStatus(c);
+      detailCount.textContent = c.robotics.length + c.cm.length;
+      mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(buildMapsQuery(c))}`;
+
+      roboticsList.innerHTML = c.robotics.length ? c.robotics.map((m) => machineCard(m)).join("") : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen robotics machines</div>`;
+      cmList.innerHTML = c.cm.length ? c.cm.map((m) => machineCard(m)).join("") : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen CM machines</div>`;
+
+      bindMachineButtons();
+      updateMetrics();
+      renderMarkers(getFilteredCustomers());
+    }
+
+    function openServiceModal() { serviceModal.classList.remove("hidden"); serviceModal.classList.add("flex"); }
+    function closeServiceModal() { serviceModal.classList.add("hidden"); serviceModal.classList.remove("flex"); engineerInput.value = "Hoofdmonteur"; noteInput.value = ""; photoInput.value = ""; }
+    function openHistoryModal() { historyModal.classList.remove("hidden"); historyModal.classList.add("flex"); }
+    function closeHistoryModal() { historyModal.classList.add("hidden"); historyModal.classList.remove("flex"); historyList.innerHTML = ""; }
+
+    async function openHistory(machineId, machineName) {
+      historyTitle.textContent = `Service historie - ${machineName}`;
+      historyList.innerHTML = `<div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4 text-sm text-slate-300">Laden...</div>`;
+      openHistoryModal();
+
+      const { data, error } = await supabaseClient.from("service_events").select("service_month, engineer_name, note, created_at, photo_url").eq("machine_id", machineId).order("created_at", { ascending: false });
+      if (error) {
+        historyList.innerHTML = `<div class="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-100">Fout bij laden van historie</div>`;
+        return;
       }
+      historyList.innerHTML = !data || data.length === 0 ? `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Nog geen service historie</div>` : data.map((event) => historyCard(event)).join("");
+    }
 
-      function parseServiceMonth(value) {
-        if (!value || /^-+$/.test(String(value).trim())) return null;
-        const match = String(value).trim().match(/^(\d{1,2})[-/](\d{4})$/);
-        if (!match) return null;
-        return new Date(Number(match[2]), Number(match[1]) - 1, 1);
-      }
+    async function uploadPhoto(file) {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const filePath = `service-events/${Date.now()}-${safeName}`;
+      const { error: uploadError } = await supabaseClient.storage.from("service-photos").upload(filePath, file);
+      if (uploadError) throw uploadError;
+      const { data } = supabaseClient.storage.from("service-photos").getPublicUrl(filePath);
+      return data.publicUrl;
+    }
 
-      function monthDiff(start, end) {
-        if (!start || !end) return 999;
-        return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-      }
+    async function saveCurrentMachine() {
+      if (!currentMachineId || !currentCustomerId) return;
+      const now = new Date();
+      const value = `${String(now.getMonth() + 1).padStart(2, "0")}-${now.getFullYear()}`;
+      const engineerName = engineerInput.value.trim() || "Hoofdmonteur";
+      const note = noteInput.value.trim();
+      const file = photoInput.files && photoInput.files[0] ? photoInput.files[0] : null;
 
-      function machineStatus(lastService) {
-        const parsed = parseServiceMonth(lastService);
-        if (!parsed) return "Rood";
-        const now = new Date();
-        const months = monthDiff(parsed, now);
-        if (months >= 12) return "Rood";
-        if (months >= 9) return "Oranje";
-        return "Groen";
-      }
+      saveServiceBtn.disabled = true;
+      saveServiceBtn.textContent = "Opslaan...";
 
-      function getCustomerStatus(customer) {
-        const all = [...customer.robotics, ...customer.cm];
-        if (!all.length) return "Groen";
-        if (all.some((m) => m.status === "Rood")) return "Rood";
-        if (all.some((m) => m.status === "Oranje")) return "Oranje";
-        return "Groen";
-      }
+      try {
+        let photoUrl = null;
+        if (file) photoUrl = await uploadPhoto(file);
 
-      function markerColorClass(status) {
-        if (status === "Rood") return "bg-red-500";
-        if (status === "Oranje") return "bg-amber-400";
-        return "bg-emerald-500";
-      }
+        const { error: updateError } = await supabaseClient.from("machines").update({ last_service: value }).eq("id", currentMachineId);
+        if (updateError) throw updateError;
 
-      function statusPill(status) {
-        const cls = status === "Rood" ? "bg-red-500/20 text-red-100" : status === "Oranje" ? "bg-amber-500/20 text-amber-100" : "bg-emerald-500/20 text-emerald-100";
-        return `<span class="rounded-full px-3 py-1 text-xs font-semibold ${cls}">${status}</span>`;
-      }
+        const { error: eventError } = await supabaseClient.from("service_events").insert({ machine_id: currentMachineId, service_month: value, engineer_name: engineerName, note: note, photo_url: photoUrl });
+        if (eventError) throw eventError;
 
-      function machineCard(machine) {
-        return `
-          <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <div class="font-medium">${machine.name}</div>
-                <div class="mt-1 text-sm text-slate-300">Laatste service: ${machine.lastService || "---"}</div>
-                ${machine.customerLabel ? `<div class="mt-1 text-xs text-slate-400">${machine.customerLabel}</div>` : ""}
-              </div>
-              ${statusPill(machine.status)}
-            </div>
-            <div class="mt-4 flex flex-wrap gap-2">
-              <button class="service-btn rounded-xl border border-white/10 px-3 py-2 text-sm" data-id="${machine.id}" data-name="${machine.name}">Service</button>
-              <button class="history-btn rounded-xl border border-white/10 px-3 py-2 text-sm" data-id="${machine.id}" data-name="${machine.name}">Historie</button>
-            </div>
-          </div>`;
-      }
+        const customer = customers.find((item) => item.id === currentCustomerId);
+        if (customer) [...customer.robotics, ...customer.cm].forEach((machine) => { if (machine.id === currentMachineId) { machine.lastService = value; machine.status = "Groen"; } });
 
-      function historyCard(event) {
-        const note = event.note && event.note.trim() ? event.note : "-";
-        const engineer = event.engineer_name && event.engineer_name.trim() ? event.engineer_name : "-";
-        const month = event.service_month || "-";
-        const photo = event.photo_url ? `<a href="${event.photo_url}" target="_blank" rel="noreferrer" class="mt-3 inline-block"><img src="${event.photo_url}" alt="Service foto" class="max-h-56 rounded-2xl border border-white/10 object-cover" /></a>` : "";
-        return `<div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4"><div class="flex flex-wrap items-center justify-between gap-3"><div class="font-medium">${month}</div><div class="text-xs text-slate-400">${event.created_at ? new Date(event.created_at).toLocaleString("nl-NL") : ""}</div></div><div class="mt-2 text-sm text-slate-300">Monteur: ${engineer}</div><div class="mt-2 text-sm text-slate-300">Notitie: ${note}</div>${photo}</div>`;
-      }
-
-      function buildAddressParts(row) {
-        const street = String(row.address || "").trim();
-        const postcode = String(row.postcode || "").trim();
-        const city = String(row.city || "").trim();
-        const country = String(row.country || "").trim();
-        const line2 = [postcode, city].filter(Boolean).join(" ").trim();
-        const full = [street, line2, country].filter(Boolean).join(", ");
-        return { street, postcode, city, country, full };
-      }
-
-      function buildCustomerAddress(customer) { return buildAddressParts(customer).full; }
-
-      function buildMapsQuery(customer) {
-        const address = buildCustomerAddress(customer);
-        const name = String(customer.name || "").trim();
-        if (address) return [name, address].filter(Boolean).join(", ");
-        if (customer.city) return [name, customer.city, customer.country || ""].filter(Boolean).join(", ");
-        return `${customer.lat},${customer.lng}`;
-      }
-
-      function projectToEurope(lat, lng) {
-        const minLat = 35, maxLat = 71, minLng = -12, maxLng = 32;
-        const x = ((Number(lng) - minLng) / (maxLng - minLng)) * 100;
-        const y = 100 - ((Number(lat) - minLat) / (maxLat - minLat)) * 100;
-        return { left: `${Math.max(4, Math.min(96, x))}%`, top: `${Math.max(6, Math.min(94, y))}%` };
-      }
-
-      function updateMetrics() {
-        let machines = 0, rood = 0, oranje = 0;
-        customers.forEach((c) => {
-          const all = [...c.robotics, ...c.cm];
-          machines += all.length;
-          all.forEach((m) => { if (m.status === "Rood") rood++; if (m.status === "Oranje") oranje++; });
-        });
-        metricLocaties.textContent = customers.length;
-        metricMachines.textContent = machines;
-        metricRood.textContent = rood;
-        metricOranje.textContent = oranje;
-      }
-
-      function getFilteredCustomers() {
-        const q = search.value.trim().toLowerCase();
-        if (!q) return customers;
-        return customers.filter((c) => `${c.name} ${c.city} ${c.address || ""} ${c.postcode || ""}`.toLowerCase().includes(q));
-      }
-
-      function renderCustomerList(filteredCustomers = null) {
-        const list = filteredCustomers || customers;
-        customerList.innerHTML = "";
-        if (!list.length) {
-          customerList.innerHTML = `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen klanten gevonden</div>`;
-          return;
-        }
-        [...list].sort((a, b) => (a.name || "").localeCompare(b.name || "")).forEach((customer) => {
-          const btn = document.createElement("button");
-          btn.className = "w-full rounded-2xl border border-white/10 bg-slate-800/60 p-3 text-left transition hover:bg-slate-800";
-          btn.innerHTML = `<div class="font-medium">${customer.name || "(geen naam)"}</div><div class="mt-1 text-sm text-slate-400">${buildCustomerAddress(customer) || customer.city || ""}</div>`;
-          btn.addEventListener("click", () => renderCustomer(customer.id));
-          customerList.appendChild(btn);
-        });
-      }
-
-      function renderMarkers(filteredCustomers = null) {
-        document.querySelectorAll(".dynamic-marker").forEach((el) => el.remove());
-        (filteredCustomers || customers).forEach((c) => {
-          const pos = projectToEurope(c.lat, c.lng);
-          const status = getCustomerStatus(c);
-          const btn = document.createElement("button");
-          btn.className = "dynamic-marker absolute z-30 -translate-x-1/2 -translate-y-1/2";
-          btn.style.left = pos.left;
-          btn.style.top = pos.top;
-          btn.title = `${c.name} — ${buildCustomerAddress(c)}`;
-          btn.innerHTML = `<div class="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg ${markerColorClass(status)}">VDB</div>`;
-          btn.addEventListener("click", () => renderCustomer(c.id));
-          mapArea.appendChild(btn);
-        });
-      }
-
-      function bindMachineButtons() {
-        document.querySelectorAll(".service-btn").forEach((btn) => btn.addEventListener("click", () => {
-          currentMachineId = btn.dataset.id;
-          currentMachineName = btn.dataset.name;
-          modalTitle.textContent = `Service registreren - ${currentMachineName}`;
-          openServiceModal();
-        }));
-        document.querySelectorAll(".history-btn").forEach((btn) => btn.addEventListener("click", () => openHistory(btn.dataset.id, btn.dataset.name)));
-      }
-
-      function renderCustomer(customerId) {
-        const c = customers.find((item) => item.id === customerId);
-        if (!c) return;
-        currentCustomerId = customerId;
-        detailName.textContent = c.name || "(geen naam)";
-        detailCity.textContent = c.city || "";
-        detailAddress.textContent = buildCustomerAddress(c) || "";
-        detailStatus.textContent = getCustomerStatus(c);
-        detailCount.textContent = c.robotics.length + c.cm.length;
-        mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(buildMapsQuery(c))}`;
-        roboticsList.innerHTML = c.robotics.length ? c.robotics.map((m) => machineCard(m)).join("") : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen robotics machines</div>`;
-        cmList.innerHTML = c.cm.length ? c.cm.map((m) => machineCard(m)).join("") : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen CM machines</div>`;
-        bindMachineButtons();
-        updateMetrics();
+        const savedName = currentMachineName;
+        currentMachineId = null;
+        currentMachineName = "";
+        closeServiceModal();
+        renderCustomer(currentCustomerId);
         renderMarkers(getFilteredCustomers());
-      }
-
-      function openServiceModal() { serviceModal.classList.remove("hidden"); serviceModal.classList.add("flex"); }
-      function closeServiceModal() { serviceModal.classList.add("hidden"); serviceModal.classList.remove("flex"); engineerInput.value = "Hoofdmonteur"; noteInput.value = ""; photoInput.value = ""; }
-      function openHistoryModal() { historyModal.classList.remove("hidden"); historyModal.classList.add("flex"); }
-      function closeHistoryModal() { historyModal.classList.add("hidden"); historyModal.classList.remove("flex"); historyList.innerHTML = ""; }
-
-      async function openHistory(machineId, machineName) {
-        historyTitle.textContent = `Service historie - ${machineName}`;
-        historyList.innerHTML = `<div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4 text-sm text-slate-300">Laden...</div>`;
-        openHistoryModal();
-        const { data, error } = await supabaseClient.from("service_events").select("service_month, engineer_name, note, created_at, photo_url").eq("machine_id", machineId).order("created_at", { ascending: false });
-        if (error) {
-          historyList.innerHTML = `<div class="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-100">Fout bij laden van historie</div>`;
-          return;
-        }
-        historyList.innerHTML = !data || data.length === 0 ? `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Nog geen service historie</div>` : data.map((event) => historyCard(event)).join("");
-      }
-
-      async function uploadPhoto(file) {
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-        const filePath = `service-events/${Date.now()}-${safeName}`;
-        const { error: uploadError } = await supabaseClient.storage.from("service-photos").upload(filePath, file);
-        if (uploadError) throw uploadError;
-        const { data } = supabaseClient.storage.from("service-photos").getPublicUrl(filePath);
-        return data.publicUrl;
-      }
-
-      async function saveCurrentMachine() {
-        if (!currentMachineId || !currentCustomerId) return;
-        const now = new Date();
-        const value = `${String(now.getMonth() + 1).padStart(2, "0")}-${now.getFullYear()}`;
-        const engineerName = engineerInput.value.trim() || "Hoofdmonteur";
-        const note = noteInput.value.trim();
-        const file = photoInput.files && photoInput.files[0] ? photoInput.files[0] : null;
-        saveServiceBtn.disabled = true;
-        saveServiceBtn.textContent = "Opslaan...";
-        try {
-          let photoUrl = null;
-          if (file) photoUrl = await uploadPhoto(file);
-          const { error: updateError } = await supabaseClient.from("machines").update({ last_service: value }).eq("id", currentMachineId);
-          if (updateError) throw updateError;
-          const { error: eventError } = await supabaseClient.from("service_events").insert({ machine_id: currentMachineId, service_month: value, engineer_name: engineerName, note: note, photo_url: photoUrl });
-          if (eventError) throw eventError;
-          const customer = customers.find((item) => item.id === currentCustomerId);
-          if (customer) [...customer.robotics, ...customer.cm].forEach((machine) => { if (machine.id === currentMachineId) { machine.lastService = value; machine.status = "Groen"; } });
-          const savedName = currentMachineName;
-          currentMachineId = null;
-          currentMachineName = "";
-          closeServiceModal();
-          renderCustomer(currentCustomerId);
-          renderMarkers(getFilteredCustomers());
-          updateMetrics();
-          showStatus(`Service opgeslagen voor ${savedName}`, "success");
-        } catch (error) {
-          showStatus(`Opslaan mislukt: ${error.message || "onbekende fout"}`, "error");
-        } finally {
-          saveServiceBtn.disabled = false;
-          saveServiceBtn.textContent = "Opslaan";
-        }
-      }
-
-      async function testConnection() {
-        const { data, error } = await supabaseClient.from("machines").select("id, machine_name").limit(5);
-        console.log("TEST DATA:", data);
-        console.log("TEST ERROR:", error);
-      }
-
-      async function loadData() {
-        showStatus("Data laden...", "info");
-        const { data: customerRows, error: customerError } = await supabaseClient.from("customers").select("id, name, city, address, postcode, country, latitude, longitude").not("name", "is", null);
-        if (customerError) { showStatus("Fout bij laden van customers", "error"); return; }
-        const { data: machineRows, error: machineError } = await supabaseClient.from("machines").select("id, customer_id, type, machine_name, last_service");
-        if (machineError) { showStatus("Fout bij laden van machines", "error"); return; }
-
-        const grouped = new Map();
-        customerRows.forEach((row) => {
-          const nameValue = row.name && row.name.trim() !== "" ? row.name : "(geen naam)";
-          const key = normalizeValue(nameValue || row.city || row.id);
-          if (!grouped.has(key)) {
-            grouped.set(key, { id: row.id, sourceIds: [row.id], name: nameValue, city: row.city || "", address: row.address || "", postcode: row.postcode || "", country: row.country || "", lat: Number(row.latitude) || 50, lng: Number(row.longitude) || 5, robotics: [], cm: [] });
-          } else {
-            grouped.get(key).sourceIds.push(row.id);
-          }
-        });
-
-        customers = Array.from(grouped.values());
-        machineRows.forEach((row) => {
-          const customer = customers.find((item) => item.sourceIds.includes(row.customer_id));
-          if (!customer) return;
-          const machine = { id: row.id, name: row.machine_name || "Machine", lastService: row.last_service || "---", status: machineStatus(row.last_service || "---"), customerLabel: customer.name };
-          if ((row.type || "").toLowerCase() === "cm") customer.cm.push(machine); else customer.robotics.push(machine);
-        });
-
         updateMetrics();
-        const filteredCustomers = getFilteredCustomers();
-        renderMarkers(filteredCustomers);
-        renderCustomerList(filteredCustomers);
-
-        if (customers.length > 0) {
-          renderCustomer(customers[0].id);
-          showStatus("Data geladen", "success");
-          setTimeout(hideStatus, 1500);
-        } else {
-          showStatus("Geen klanten gevonden", "error");
-        }
+        showStatus(`Service opgeslagen voor ${savedName}`, "success");
+      } catch (error) {
+        console.error(error);
+        showStatus(`Opslaan mislukt: ${error.message || "onbekende fout"}`, "error");
+      } finally {
+        saveServiceBtn.disabled = false;
+        saveServiceBtn.textContent = "Opslaan";
       }
+    }
 
-      search.addEventListener("input", () => {
-        const filteredCustomers = getFilteredCustomers();
-        renderMarkers(filteredCustomers);
-        renderCustomerList(filteredCustomers);
+    async function loadData() {
+      showStatus("Data laden...", "info");
+
+      const { data: customerRows, error: customerError } = await supabaseClient.from("customers").select("id, name, city, address, postcode, country, latitude, longitude").not("name", "is", null);
+      if (customerError) { showStatus("Fout bij laden van customers", "error"); return; }
+
+      const { data: machineRows, error: machineError } = await supabaseClient.from("machines").select("id, customer_id, type, machine_name, last_service");
+      if (machineError) { showStatus("Fout bij laden van machines", "error"); return; }
+
+      const grouped = new Map();
+      customerRows.forEach((row) => {
+        const nameValue = row.name && row.name.trim() !== "" ? row.name : "(geen naam)";
+        const key = normalizeValue(nameValue || row.city || row.id);
+        if (!grouped.has(key)) {
+          grouped.set(key, { id: row.id, sourceIds: [row.id], name: nameValue, city: row.city || "", address: row.address || "", postcode: row.postcode || "", country: row.country || "", lat: Number(row.latitude) || 50, lng: Number(row.longitude) || 5, robotics: [], cm: [] });
+        } else {
+          grouped.get(key).sourceIds.push(row.id);
+        }
       });
 
-      closeModalTop.addEventListener("click", closeServiceModal);
-      saveServiceBtn.addEventListener("click", saveCurrentMachine);
-      closeHistoryTop.addEventListener("click", closeHistoryModal);
-      closeHistoryBottom.addEventListener("click", closeHistoryModal);
-      serviceModal.addEventListener("click", (e) => { if (e.target === serviceModal) closeServiceModal(); });
-      historyModal.addEventListener("click", (e) => { if (e.target === historyModal) closeHistoryModal(); });
+      customers = Array.from(grouped.values());
+      machineRows.forEach((row) => {
+        const customer = customers.find((item) => item.sourceIds.includes(row.customer_id));
+        if (!customer) return;
+        const machine = { id: row.id, name: row.machine_name || "Machine", lastService: row.last_service || "---", status: machineStatus(row.last_service || "---"), customerLabel: customer.name };
+        if ((row.type || "").toLowerCase() === "cm") customer.cm.push(machine); else customer.robotics.push(machine);
+      });
 
-      testConnection();
-      loadData();
-    </script>
-  </body>
+      updateMetrics();
+      const filteredCustomers = getFilteredCustomers();
+      renderMarkers(filteredCustomers);
+      renderCustomerList(filteredCustomers);
+
+      if (customers.length > 0) {
+        renderCustomer(customers[0].id);
+        showStatus("Data geladen", "success");
+        setTimeout(hideStatus, 1500);
+      } else {
+        showStatus("Geen klanten gevonden", "error");
+      }
+    }
+
+    search.addEventListener("input", () => {
+      const filteredCustomers = getFilteredCustomers();
+      renderMarkers(filteredCustomers);
+      renderCustomerList(filteredCustomers);
+    });
+
+    closeModalTop.addEventListener("click", closeServiceModal);
+    saveServiceBtn.addEventListener("click", saveCurrentMachine);
+    closeHistoryTop.addEventListener("click", closeHistoryModal);
+    closeHistoryBottom.addEventListener("click", closeHistoryModal);
+    serviceModal.addEventListener("click", (e) => { if (e.target === serviceModal) closeServiceModal(); });
+    historyModal.addEventListener("click", (e) => { if (e.target === historyModal) closeHistoryModal(); });
+
+    loadData();
+  </script>
+</body>
 </html>
