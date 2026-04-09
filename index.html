@@ -484,7 +484,7 @@
         const nameValue = row.name && row.name.trim() !== "" ? row.name : "(geen naam)";
         const key = normalizeValue(nameValue);
         if (!grouped.has(key)) {
-          grouped.set(key, { id: row.id, sourceIds: [row.id], name: nameValue, city: row.city || "", address: row.address || "", postcode: row.postcode || "", country: row.country || "", lat: Number(row.latitude) || 50, lng: Number(row.longitude) || 5, robotics: [], cm: [] });
+          grouped.set(key, { id: row.id, sourceIds: [row.id], name: nameValue, city: row.city || "", address: row.address || "", postcode: row.postcode || "", country: row.country || "", lat: 50, lng: 5, robotics: [], cm: [] });
         } else {
           grouped.get(key).sourceIds.push(row.id);
         }
