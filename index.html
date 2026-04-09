@@ -76,13 +76,6 @@
                 <path d="M743 118 L774 111 L793 130 L785 153 L758 157 L740 142 Z"/>
               </g>
             </svg>
-
-            <div class="absolute inset-0 z-20 pointer-events-none opacity-10">
-              <div class="absolute left-[10%] top-[18%] h-[42%] w-[28%] rounded-[48%] border border-cyan-200/20"></div>
-              <div class="absolute left-[28%] top-[33%] h-[17%] w-[12%] rounded-[44%] border border-cyan-200/20"></div>
-              <div class="absolute left-[41%] top-[23%] h-[34%] w-[22%] rounded-[44%] border border-cyan-200/20"></div>
-              <div class="absolute left-[53%] top-[57%] h-[12%] w-[9%] rounded-[50%] border border-cyan-200/20"></div>
-            </div>
           </div>
 
           <div class="mt-4">
@@ -253,8 +246,6 @@
     let currentMachineId = null;
     let currentMachineName = "";
 
-    const customerCoordinates = {};
-
     function showStatus(message, type = "info") {
       statusBar.className = "mb-6 rounded-2xl border px-4 py-3 text-sm";
       statusBar.classList.remove("hidden");
@@ -332,69 +323,6 @@
       return `<span class="rounded-full px-3 py-1 text-xs font-semibold ${cls}">${status}</span>`;
     }
 
-    function buildAddressParts(row) {
-      const street = String(row.address || "").trim();
-      const postcode = String(row.postcode || "").trim();
-      const city = String(row.city || "").trim();
-      const country = String(row.country || "").trim();
-      const line2 = [postcode, city].filter(Boolean).join(" ").trim();
-      const full = [street, line2, country].filter(Boolean).join(", ");
-      return { full };
-    }
-
-    function buildCustomerAddress(customer) {
-      return buildAddressParts(customer).full;
-    }
-
-    function getCustomerKey(customer) {
-      return `${customer.name}|${customer.address}|${customer.postcode}|${customer.city}|${customer.country}`;
-    }
-
-    function getCoordinates(customer) {
-      const key = getCustomerKey(customer);
-
-      if (customerCoordinates[key]) {
-        return customerCoordinates[key];
-      }
-
-      let hash = 0;
-      for (let i = 0; i < key.length; i++) {
-        hash = key.charCodeAt(i) + ((hash << 5) - hash);
-        hash |= 0;
-      }
-
-      const lat = 43 + (Math.abs(hash) % 22);  // 43..64
-      const lng = -9 + (Math.abs(hash * 7) % 38); // -9..28
-
-      const coords = { lat, lng };
-      customerCoordinates[key] = coords;
-      return coords;
-    }
-
-    function buildMapsQuery(customer) {
-      const address = buildCustomerAddress(customer);
-      const name = String(customer.name || "").trim();
-      if (address) return [name, address].filter(Boolean).join(", ");
-      if (customer.city) return [name, customer.city, customer.country || ""].filter(Boolean).join(", ");
-      const coords = getCoordinates(customer);
-      return `${coords.lat},${coords.lng}`;
-    }
-
-    function projectToEurope(lat, lng) {
-      const minLat = 35;
-      const maxLat = 71;
-      const minLng = -12;
-      const maxLng = 32;
-
-      const x = ((Number(lng) - minLng) / (maxLng - minLng)) * 100;
-      const y = 100 - ((Number(lat) - minLat) / (maxLat - minLat)) * 100;
-
-      return {
-        left: `${Math.max(4, Math.min(96, x))}%`,
-        top: `${Math.max(6, Math.min(94, y))}%`
-      };
-    }
-
     function machineCard(machine) {
       return `
         <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
@@ -411,7 +339,6 @@
             <button class="service-btn rounded-xl border border-white/10 px-3 py-2 text-sm" data-id="${machine.id}" data-name="${machine.name}">
               Service
             </button>
-
             <button class="history-btn rounded-xl border border-white/10 px-3 py-2 text-sm" data-id="${machine.id}" data-name="${machine.name}">
               Historie
             </button>
@@ -434,15 +361,50 @@
         <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="font-medium">${month}</div>
-            <div class="text-xs text-slate-400">
-              ${event.created_at ? new Date(event.created_at).toLocaleString("nl-NL") : ""}
-            </div>
+            <div class="text-xs text-slate-400">${event.created_at ? new Date(event.created_at).toLocaleString("nl-NL") : ""}</div>
           </div>
           <div class="mt-2 text-sm text-slate-300">Monteur: ${engineer}</div>
           <div class="mt-2 text-sm text-slate-300">Notitie: ${note}</div>
           ${photo}
         </div>
       `;
+    }
+
+    function buildAddressParts(row) {
+      const street = String(row.address || "").trim();
+      const postcode = String(row.postcode || "").trim();
+      const city = String(row.city || "").trim();
+      const country = String(row.country || "").trim();
+      const line2 = [postcode, city].filter(Boolean).join(" ").trim();
+      const full = [street, line2, country].filter(Boolean).join(", ");
+      return { full };
+    }
+
+    function buildCustomerAddress(customer) {
+      return buildAddressParts(customer).full;
+    }
+
+    function buildMapsQuery(customer) {
+      const address = buildCustomerAddress(customer);
+      const name = String(customer.name || "").trim();
+      if (address) return [name, address].filter(Boolean).join(", ");
+      if (customer.city) return [name, customer.city, customer.country || ""].filter(Boolean).join(", ");
+      return "";
+    }
+
+    function projectToEurope(lat, lng) {
+      const minLat = 35;
+      const maxLat = 71;
+      const minLng = -12;
+      const maxLng = 32;
+
+      const x = ((Number(lng) - minLng) / (maxLng - minLng)) * 100;
+      const y = 100 - ((Number(lat) - minLat) / (maxLat - minLat)) * 100;
+
+      return {
+        left: `${Math.max(4, Math.min(96, x))}%`,
+        top: `${Math.max(6, Math.min(94, y))}%`
+      };
     }
 
     function updateMetrics() {
@@ -504,8 +466,11 @@
       const list = filteredCustomers || customers;
 
       list.forEach((c) => {
-        const coords = getCoordinates(c);
-        const pos = projectToEurope(coords.lat, coords.lng);
+        if (typeof c.latitude !== "number" || typeof c.longitude !== "number" || Number.isNaN(c.latitude) || Number.isNaN(c.longitude)) {
+          return;
+        }
+
+        const pos = projectToEurope(c.latitude, c.longitude);
         const status = getCustomerStatus(c);
 
         const btn = document.createElement("button");
@@ -699,7 +664,7 @@
 
       const { data: customerRows, error: customerError } = await supabaseClient
         .from("customers")
-        .select("id, name, address, postcode, city, country")
+        .select("id, name, address, postcode, city, country, latitude, longitude")
         .not("name", "is", null);
 
       if (customerError) {
@@ -733,6 +698,8 @@
             postcode: row.postcode || "",
             city: row.city || "",
             country: row.country || "",
+            latitude: row.latitude !== null ? Number(row.latitude) : null,
+            longitude: row.longitude !== null ? Number(row.longitude) : null,
             robotics: [],
             cm: []
           });
