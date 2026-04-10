@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Van den Bos Robotics Service</title>
+  <meta name="color-scheme" content="dark" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
@@ -19,20 +20,32 @@
     .custom-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148,163,184,.3); border-radius: 9999px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .marker-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 9999px;
+      border: 2px solid rgba(255,255,255,.95);
+      box-shadow: 0 0 0 6px rgba(15,23,42,.45);
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-white">
   <div class="min-h-screen p-4 md:p-6">
     <div class="mx-auto max-w-7xl">
       <header class="mb-6 rounded-[28px] border border-white/10 bg-slate-900 px-6 py-6 shadow-2xl shadow-cyan-950/20 md:px-8 md:py-7">
-        <div class="flex flex-col gap-3">
-          <div class="text-xs uppercase tracking-[0.45em] text-cyan-300">Service App</div>
-          <div class="flex flex-wrap items-end gap-x-3 gap-y-1 leading-none">
-            <span class="text-4xl font-extrabold tracking-tight text-white md:text-6xl">VAN DEN</span>
-            <span class="text-4xl font-extrabold tracking-tight text-green-500 md:text-6xl">BOS</span>
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div class="flex flex-col gap-3">
+            <div class="text-xs uppercase tracking-[0.45em] text-cyan-300">Service App</div>
+            <div class="flex flex-wrap items-end gap-x-3 gap-y-1 leading-none">
+              <span class="text-4xl font-extrabold tracking-tight text-white md:text-6xl">VAN DEN</span>
+              <span class="text-4xl font-extrabold tracking-tight text-green-500 md:text-6xl">BOS</span>
+            </div>
+            <div class="pl-1 text-2xl font-light tracking-[0.35em] text-slate-300 md:text-4xl">
+              robotics <span class="font-medium tracking-normal text-white">Service</span>
+            </div>
           </div>
-          <div class="pl-1 text-2xl font-light tracking-[0.35em] text-slate-300 md:text-4xl">
-            robotics <span class="font-medium tracking-normal text-white">Service</span>
+          <div class="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-100">
+            Productieversie op echte customers, machines en service_events
           </div>
         </div>
       </header>
@@ -63,10 +76,10 @@
           <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 class="text-xl font-semibold">Kaart met echte locaties</h2>
-              <p class="text-sm text-slate-300">1 marker per klant, direct op basis van latitude en longitude uit customers</p>
+              <p class="text-sm text-slate-300">1 marker per klant op basis van latitude en longitude uit customers</p>
             </div>
             <div class="flex w-full flex-col gap-2 md:w-auto md:flex-row">
-              <input id="search" placeholder="Zoek klant, plaats, machine" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-2 text-sm outline-none md:w-72" />
+              <input id="search" placeholder="Zoek klant, plaats, machine, serienummer" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-2 text-sm outline-none md:w-80" />
               <button id="refresh-btn" class="rounded-2xl border border-white/10 bg-slate-800 px-4 py-2 text-sm">Verversen</button>
             </div>
           </div>
@@ -82,7 +95,7 @@
         <aside class="rounded-3xl border border-white/10 bg-slate-900 p-5">
           <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Klantdetail</div>
 
-          <h2 id="detail-name" class="mt-2 text-2xl font-semibold">Laden...</h2>
+          <h2 id="detail-name" class="mt-2 text-2xl font-semibold">Selecteer een klant</h2>
           <p id="detail-city" class="mt-1 text-sm text-slate-300"></p>
           <p id="detail-address" class="mt-1 text-sm text-slate-400"></p>
 
@@ -105,17 +118,12 @@
 
           <div class="mt-6 rounded-2xl border border-white/10 bg-slate-800/40 p-4">
             <div class="mb-2 text-sm font-semibold">Recente service-events</div>
-            <div id="recent-events" class="custom-scrollbar max-h-[200px] space-y-3 overflow-auto"></div>
+            <div id="recent-events" class="custom-scrollbar max-h-[220px] space-y-3 overflow-auto"></div>
           </div>
 
           <div class="mt-6">
-            <h3 class="mb-3 text-lg font-semibold">Robotics</h3>
-            <div id="robotics-list" class="space-y-3"></div>
-          </div>
-
-          <div class="mt-6">
-            <h3 class="mb-3 text-lg font-semibold">CM</h3>
-            <div id="cm-list" class="space-y-3"></div>
+            <h3 class="mb-3 text-lg font-semibold">Machines</h3>
+            <div id="machine-list" class="space-y-3"></div>
           </div>
         </aside>
       </main>
@@ -176,582 +184,619 @@
   </div>
 
   <script>
-    const SUPABASE_URL = window.SUPABASE_URL || "https://YOUR_PROJECT.supabase.co";
-    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "YOUR_SUPABASE_ANON_KEY";
-    const PHOTO_BUCKET = window.PHOTO_BUCKET || "service-photos";
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.__APP_CONFIG__ = window.__APP_CONFIG__ || {
+      supabaseUrl: "https://YOUR_PROJECT.supabase.co",
+      supabaseAnonKey: "YOUR_SUPABASE_ANON_KEY",
+      photoBucket: "service-photos",
+      appTitle: "Van den Bos Robotics Service"
+    };
+  </script>
 
-    const statusBar = document.getElementById("status-bar");
-    const customerList = document.getElementById("customer-list");
-    const detailName = document.getElementById("detail-name");
-    const detailCity = document.getElementById("detail-city");
-    const detailAddress = document.getElementById("detail-address");
-    const detailStatus = document.getElementById("detail-status");
-    const detailCount = document.getElementById("detail-count");
-    const roboticsList = document.getElementById("robotics-list");
-    const cmList = document.getElementById("cm-list");
-    const search = document.getElementById("search");
-    const mapsLink = document.getElementById("maps-link");
-    const recentEvents = document.getElementById("recent-events");
-    const openCustomerHistoryBtn = document.getElementById("open-customer-history");
-    const refreshBtn = document.getElementById("refresh-btn");
+  <script>
+    (function () {
+      const config = window.__APP_CONFIG__ || {};
+      const hasValidConfig = config.supabaseUrl && !String(config.supabaseUrl).includes("YOUR_PROJECT") && config.supabaseAnonKey && !String(config.supabaseAnonKey).includes("YOUR_SUPABASE_ANON_KEY");
 
-    const metricLocaties = document.getElementById("metric-locaties");
-    const metricMachines = document.getElementById("metric-machines");
-    const metricRood = document.getElementById("metric-rood");
-    const metricOranje = document.getElementById("metric-oranje");
-
-    const serviceModal = document.getElementById("service-modal");
-    const modalTitle = document.getElementById("modal-title");
-    const closeModalTop = document.getElementById("close-modal-top");
-    const saveServiceBtn = document.getElementById("save-service");
-    const engineerInput = document.getElementById("engineer");
-    const noteInput = document.getElementById("service-note");
-    const photoInput = document.getElementById("photo-input");
-    const photoPreview = document.getElementById("photo-preview");
-
-    const historyModal = document.getElementById("history-modal");
-    const historyTitle = document.getElementById("history-title");
-    const historyList = document.getElementById("history-list");
-    const closeHistoryTop = document.getElementById("close-history-top");
-    const closeHistoryBottom = document.getElementById("close-history-bottom");
-
-    let customers = [];
-    let currentCustomerId = null;
-    let currentMachineId = null;
-    let currentMachineName = "";
-    let map = null;
-    let markersLayer = null;
-    let markersByCustomerId = new Map();
-
-    function showStatus(message, type = "info") {
-      statusBar.className = "mb-6 rounded-2xl border px-4 py-3 text-sm";
-      statusBar.classList.remove("hidden");
-      if (type === "error") statusBar.classList.add("border-red-500/30", "bg-red-500/10", "text-red-100");
-      else if (type === "success") statusBar.classList.add("border-emerald-500/30", "bg-emerald-500/10", "text-emerald-100");
-      else statusBar.classList.add("border-cyan-500/30", "bg-cyan-500/10", "text-cyan-100");
-      statusBar.textContent = message;
-    }
-
-    function hideStatus() { statusBar.classList.add("hidden"); }
-
-    function normalizeValue(value) {
-      return String(value || "")
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/ß/g, "ss")
-        .replace(/[^a-z0-9]+/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-
-    function safeText(value, fallback = "-") {
-      return value === null || value === undefined || String(value).trim() === "" ? fallback : String(value);
-    }
-
-    function parseServiceMonth(value) {
-      if (!value || /^-+$/.test(String(value).trim())) return null;
-      const parsed = new Date(value);
-      if (!Number.isNaN(parsed.getTime())) return new Date(parsed.getFullYear(), parsed.getMonth(), 1);
-      const match = String(value).trim().match(/^(\d{1,2})[-/](\d{4})$/);
-      if (!match) return null;
-      return new Date(Number(match[2]), Number(match[1]) - 1, 1);
-    }
-
-    function monthDiff(start, end) {
-      if (!start || !end) return 999;
-      return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-    }
-
-    function machineStatus(lastService) {
-      const parsed = parseServiceMonth(lastService);
-      if (!parsed) return "Rood";
-      const months = monthDiff(parsed, new Date());
-      if (months >= 12) return "Rood";
-      if (months >= 9) return "Oranje";
-      return "Groen";
-    }
-
-    function getCustomerStatus(customer) {
-      const all = [...customer.robotics, ...customer.cm];
-      if (!all.length) return "Groen";
-      if (all.some((m) => m.status === "Rood")) return "Rood";
-      if (all.some((m) => m.status === "Oranje")) return "Oranje";
-      return "Groen";
-    }
-
-    function markerColor(status) {
-      if (status === "Rood") return "#ef4444";
-      if (status === "Oranje") return "#f59e0b";
-      return "#10b981";
-    }
-
-    function statusPill(status) {
-      const cls = status === "Rood"
-        ? "bg-red-500/20 text-red-100"
-        : status === "Oranje"
-        ? "bg-amber-500/20 text-amber-100"
-        : "bg-emerald-500/20 text-emerald-100";
-      return `<span class="rounded-full px-3 py-1 text-xs font-semibold ${cls}">${status}</span>`;
-    }
-
-    function buildAddressParts(row) {
-      const street = String(row.address || "").trim();
-      const postcode = String(row.postcode || "").trim();
-      const city = String(row.city || "").trim();
-      const country = String(row.country || "").trim();
-      const line2 = [postcode, city].filter(Boolean).join(" ").trim();
-      return { full: [street, line2, country].filter(Boolean).join(", ") };
-    }
-
-    function buildCustomerAddress(customer) { return buildAddressParts(customer).full; }
-
-    function buildMapsQuery(customer) {
-      const address = buildCustomerAddress(customer);
-      const name = String(customer.name || "").trim();
-      if (address) return [name, address].filter(Boolean).join(", ");
-      if (customer.city) return [name, customer.city, customer.country || ""].filter(Boolean).join(", ");
-      return name;
-    }
-
-    function machineCard(machine) {
-      return `
-        <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <div class="font-medium">${safeText(machine.name, "Machine")}</div>
-              <div class="mt-1 text-sm text-slate-300">Laatste service: ${safeText(machine.lastService, "---")}</div>
-              <div class="mt-1 text-xs text-slate-400">${machine.events.length} events</div>
-            </div>
-            ${statusPill(machine.status)}
-          </div>
-
-          ${machine.latestEvent ? `
-            <div class="mt-3 rounded-xl border border-white/10 bg-slate-900/40 p-3 text-sm text-slate-300">
-              <div class="font-medium text-white">Laatste notitie</div>
-              <div class="mt-1">${safeText(machine.latestEvent.note, "Geen notitie")}</div>
-            </div>` : ""}
-
-          <div class="mt-4 flex flex-wrap gap-2">
-            <button class="service-btn rounded-xl border border-white/10 px-3 py-2 text-sm" data-id="${machine.id}" data-name="${safeText(machine.name, "Machine")}">Service</button>
-            <button class="history-btn rounded-xl border border-white/10 px-3 py-2 text-sm" data-id="${machine.id}" data-name="${safeText(machine.name, "Machine")}">Historie</button>
-          </div>
-        </div>`;
-    }
-
-    function historyCard(event) {
-      const photo = event.photo_url
-        ? `<a href="${event.photo_url}" target="_blank" rel="noreferrer" class="mt-3 inline-block"><img src="${event.photo_url}" alt="Service foto" class="max-h-56 rounded-2xl border border-white/10 object-cover" /></a>`
-        : "";
-      return `
-        <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div class="font-medium">${safeText(event.machine_name, "Machine")}</div>
-              <div class="mt-1 text-sm text-slate-300">${safeText(event.service_month, "-")}</div>
-            </div>
-            <div class="text-xs text-slate-400">${event.created_at ? new Date(event.created_at).toLocaleString("nl-NL") : ""}</div>
-          </div>
-          <div class="mt-2 text-sm text-slate-300">Monteur: ${safeText(event.engineer_name, "-")}</div>
-          <div class="mt-2 text-sm text-slate-300">Notitie: ${safeText(event.note, "-")}</div>
-          ${photo}
-        </div>`;
-    }
-
-    function updateMetrics() {
-      let machines = 0, rood = 0, oranje = 0;
-      customers.forEach((c) => {
-        const all = [...c.robotics, ...c.cm];
-        machines += all.length;
-        all.forEach((m) => {
-          if (m.status === "Rood") rood++;
-          if (m.status === "Oranje") oranje++;
-        });
-      });
-      metricLocaties.textContent = customers.length;
-      metricMachines.textContent = machines;
-      metricRood.textContent = rood;
-      metricOranje.textContent = oranje;
-    }
-
-    function getFilteredCustomers() {
-      const q = normalizeValue(search.value);
-      if (!q) return customers;
-      return customers.filter((c) => {
-        const machineText = [...c.robotics, ...c.cm].map((m) => m.name).join(" ");
-        const txt = normalizeValue(`${c.name} ${c.city} ${c.address || ""} ${c.postcode || ""} ${machineText}`);
-        return txt.includes(q);
-      });
-    }
-
-    function renderCustomerList(filteredCustomers = null) {
-      const list = filteredCustomers || customers;
-      customerList.innerHTML = "";
-      if (!list.length) {
-        customerList.innerHTML = `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen klanten gevonden</div>`;
-        return;
-      }
-      [...list].sort((a, b) => (a.name || "").localeCompare(b.name || "")).forEach((customer) => {
-        const isActive = customer.id === currentCustomerId;
-        const btn = document.createElement("button");
-        btn.className = `w-full rounded-2xl border p-3 text-left transition ${isActive ? "border-cyan-400/50 bg-slate-800" : "border-white/10 bg-slate-800/60 hover:bg-slate-800"}`;
-        btn.innerHTML = `
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <div class="font-medium">${safeText(customer.name, "(geen naam)")}</div>
-              <div class="mt-1 text-sm text-slate-400">${safeText(buildCustomerAddress(customer), safeText(customer.city, ""))}</div>
-            </div>
-            ${statusPill(getCustomerStatus(customer))}
-          </div>`;
-        btn.addEventListener("click", () => renderCustomer(customer.id, true));
-        customerList.appendChild(btn);
-      });
-    }
-
-    function createMarkerIcon(status) {
-      return L.divIcon({
-        className: "",
-        html: `<div style="width:18px;height:18px;border-radius:9999px;background:${markerColor(status)};border:3px solid rgba(255,255,255,.9);box-shadow:0 0 0 6px rgba(15,23,42,.35)"></div>`,
-        iconSize: [18, 18],
-        iconAnchor: [9, 9]
-      });
-    }
-
-    function initMap() {
-      map = L.map("map", { zoomControl: true }).setView([51.8, 8.4], 5);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: "&copy; OpenStreetMap"
-      }).addTo(map);
-      markersLayer = L.layerGroup().addTo(map);
-    }
-
-    function fitMapToCustomers(filteredCustomers = null) {
-      const list = (filteredCustomers || customers).filter((c) => Number.isFinite(c.latitude) && Number.isFinite(c.longitude));
-      if (!list.length) return;
-      const bounds = L.latLngBounds(list.map((c) => [c.latitude, c.longitude]));
-      map.fitBounds(bounds.pad(0.18));
-    }
-
-    function renderMarkers(filteredCustomers = null) {
-      const list = filteredCustomers || customers;
-      markersLayer.clearLayers();
-      markersByCustomerId = new Map();
-      list.forEach((c) => {
-        if (!Number.isFinite(c.latitude) || !Number.isFinite(c.longitude)) return;
-        const status = getCustomerStatus(c);
-        const marker = L.marker([c.latitude, c.longitude], { icon: createMarkerIcon(status) });
-        const machines = [...c.robotics, ...c.cm];
-        marker.bindPopup(`
-          <div class="min-w-[200px]">
-            <div class="font-semibold">${safeText(c.name, "(geen naam)")}</div>
-            <div class="mt-1 text-sm">${safeText(buildCustomerAddress(c), "Geen adres")}</div>
-            <div class="mt-2 text-sm">${machines.length} machines</div>
-          </div>`);
-        marker.on("click", () => renderCustomer(c.id, false));
-        marker.addTo(markersLayer);
-        markersByCustomerId.set(c.id, marker);
-      });
-    }
-
-    function focusOnCustomer(customer) {
-      if (!customer || !Number.isFinite(customer.latitude) || !Number.isFinite(customer.longitude)) return;
-      map.setView([customer.latitude, customer.longitude], Math.max(map.getZoom(), 11), { animate: true });
-      const marker = markersByCustomerId.get(customer.id);
-      if (marker) marker.openPopup();
-    }
-
-    function renderRecentEvents(customer) {
-      const allEvents = [...customer.robotics, ...customer.cm]
-        .flatMap((machine) => machine.events.map((event) => ({ ...event, machine_name: machine.name })))
-        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
-        .slice(0, 6);
-
-      if (!allEvents.length) {
-        recentEvents.innerHTML = `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Nog geen service historie</div>`;
-        return;
-      }
-      recentEvents.innerHTML = allEvents.map(historyCard).join("");
-    }
-
-    function bindMachineButtons() {
-      document.querySelectorAll(".service-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          currentMachineId = btn.dataset.id;
-          currentMachineName = btn.dataset.name;
-          modalTitle.textContent = `Service registreren - ${currentMachineName}`;
-          openServiceModal();
-        });
-      });
-      document.querySelectorAll(".history-btn").forEach((btn) => {
-        btn.addEventListener("click", () => openMachineHistory(btn.dataset.id, btn.dataset.name));
-      });
-    }
-
-    function renderCustomer(customerId, focusMap = false) {
-      const c = customers.find((item) => item.id === customerId);
-      if (!c) return;
-      currentCustomerId = customerId;
-      detailName.textContent = safeText(c.name, "(geen naam)");
-      detailCity.textContent = safeText(c.city, "");
-      detailAddress.textContent = safeText(buildCustomerAddress(c), "");
-      detailStatus.textContent = getCustomerStatus(c);
-      detailCount.textContent = c.robotics.length + c.cm.length;
-      mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(buildMapsQuery(c))}`;
-
-      roboticsList.innerHTML = c.robotics.length
-        ? c.robotics.map(machineCard).join("")
-        : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen robotics machines</div>`;
-
-      cmList.innerHTML = c.cm.length
-        ? c.cm.map(machineCard).join("")
-        : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen CM machines</div>`;
-
-      renderRecentEvents(c);
-      bindMachineButtons();
-      renderCustomerList(getFilteredCustomers());
-      if (focusMap) focusOnCustomer(c);
-    }
-
-    function openServiceModal() {
-      serviceModal.classList.remove("hidden");
-      serviceModal.classList.add("flex");
-    }
-
-    function closeServiceModal() {
-      serviceModal.classList.add("hidden");
-      serviceModal.classList.remove("flex");
-      engineerInput.value = "Hoofdmonteur";
-      noteInput.value = "";
-      photoInput.value = "";
-      photoPreview.src = "";
-      photoPreview.classList.add("hidden");
-    }
-
-    function openHistoryModal() {
-      historyModal.classList.remove("hidden");
-      historyModal.classList.add("flex");
-    }
-
-    function closeHistoryModal() {
-      historyModal.classList.add("hidden");
-      historyModal.classList.remove("flex");
-      historyList.innerHTML = "";
-    }
-
-    async function openMachineHistory(machineId, machineName) {
-      historyTitle.textContent = `Service historie - ${machineName}`;
-      historyList.innerHTML = `<div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4 text-sm text-slate-300">Laden...</div>`;
-      openHistoryModal();
-      const { data, error } = await supabaseClient
-        .from("service_events")
-        .select("service_month, engineer_name, note, created_at, photo_url")
-        .eq("machine_id", machineId)
-        .order("created_at", { ascending: false });
-      if (error) {
-        historyList.innerHTML = `<div class="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-100">Fout bij laden van historie</div>`;
-        return;
-      }
-      if (!data || !data.length) {
-        historyList.innerHTML = `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Nog geen service historie</div>`;
-        return;
-      }
-      historyList.innerHTML = data.map((event) => historyCard({ ...event, machine_name: machineName })).join("");
-    }
-
-    function openCustomerHistory() {
-      const customer = customers.find((item) => item.id === currentCustomerId);
-      if (!customer) return;
-      historyTitle.textContent = `Volledige historie - ${safeText(customer.name, "Klant")}`;
-      const allEvents = [...customer.robotics, ...customer.cm]
-        .flatMap((machine) => machine.events.map((event) => ({ ...event, machine_name: machine.name })))
-        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-      historyList.innerHTML = allEvents.length
-        ? allEvents.map(historyCard).join("")
-        : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Nog geen service historie</div>`;
-      openHistoryModal();
-    }
-
-    async function uploadPhoto(file, machineId) {
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const filePath = `service-events/${machineId}/${Date.now()}-${safeName}`;
-      const { error: uploadError } = await supabaseClient.storage.from(PHOTO_BUCKET).upload(filePath, file, { upsert: false });
-      if (uploadError) throw uploadError;
-      const { data } = supabaseClient.storage.from(PHOTO_BUCKET).getPublicUrl(filePath);
-      return data.publicUrl;
-    }
-
-    async function saveCurrentMachine() {
-      if (!currentMachineId || !currentCustomerId) return;
-      const now = new Date();
-      const value = `${String(now.getMonth() + 1).padStart(2, "0")}-${now.getFullYear()}`;
-      const engineerName = engineerInput.value.trim() || "Hoofdmonteur";
-      const note = noteInput.value.trim();
-      const file = photoInput.files && photoInput.files[0] ? photoInput.files[0] : null;
-      saveServiceBtn.disabled = true;
-      saveServiceBtn.textContent = "Opslaan...";
-      try {
-        let photoUrl = null;
-        if (file) photoUrl = await uploadPhoto(file, currentMachineId);
-
-        const { error: updateError } = await supabaseClient.from("machines").update({ last_service: value }).eq("id", currentMachineId);
-        if (updateError) throw updateError;
-
-        const { error: eventError } = await supabaseClient.from("service_events").insert({
-          machine_id: currentMachineId,
-          service_month: value,
-          engineer_name: engineerName,
-          note,
-          photo_url: photoUrl
-        });
-        if (eventError) throw eventError;
-
-        const savedName = currentMachineName;
-        closeServiceModal();
-        await loadData(currentCustomerId);
-        showStatus(`Service opgeslagen voor ${savedName}`, "success");
-        setTimeout(hideStatus, 1800);
-      } catch (error) {
-        console.error(error);
-        showStatus(`Opslaan mislukt: ${error.message || "onbekende fout"}`, "error");
-      } finally {
-        saveServiceBtn.disabled = false;
-        saveServiceBtn.textContent = "Opslaan";
-      }
-    }
-
-    function groupData(customerRows, machineRows, eventRows) {
-      const customerMap = new Map();
-      customerRows.forEach((row) => {
-        customerMap.set(row.id, {
-          id: row.id,
-          name: row.name || "(geen naam)",
-          address: row.address || "",
-          postcode: row.postcode || "",
-          city: row.city || "",
-          country: row.country || "",
-          latitude: row.latitude !== null ? Number(row.latitude) : null,
-          longitude: row.longitude !== null ? Number(row.longitude) : null,
-          robotics: [],
-          cm: []
-        });
-      });
-
-      const eventsByMachineId = new Map();
-      eventRows.forEach((event) => {
-        if (!eventsByMachineId.has(event.machine_id)) eventsByMachineId.set(event.machine_id, []);
-        eventsByMachineId.get(event.machine_id).push(event);
-      });
-      eventsByMachineId.forEach((arr) => arr.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)));
-
-      machineRows.forEach((row) => {
-        const customer = customerMap.get(row.customer_id);
-        if (!customer) return;
-        const events = eventsByMachineId.get(row.id) || [];
-        const machine = {
-          id: row.id,
-          name: row.machine_name || "Machine",
-          lastService: row.last_service || "---",
-          status: machineStatus(row.last_service || (events[0] && events[0].service_month) || "---"),
-          latestEvent: events[0] || null,
-          events
-        };
-        if ((row.type || "").toLowerCase() === "cm") customer.cm.push(machine);
-        else customer.robotics.push(machine);
-      });
-
-      return Array.from(customerMap.values())
-        .filter((c) => c.robotics.length + c.cm.length > 0)
-        .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-    }
-
-    async function loadData(preferredCustomerId = null) {
-      showStatus("Data laden...", "info");
-      const [customersResult, machinesResult, eventsResult] = await Promise.all([
-        supabaseClient.from("customers").select("id, name, address, postcode, city, country, latitude, longitude").not("name", "is", null),
-        supabaseClient.from("machines").select("id, customer_id, type, machine_name, last_service"),
-        supabaseClient.from("service_events").select("id, machine_id, service_month, engineer_name, note, created_at, photo_url")
-      ]);
-
-      if (customersResult.error) {
-        showStatus("Fout bij laden van customers", "error");
-        console.error(customersResult.error);
-        return;
-      }
-      if (machinesResult.error) {
-        showStatus("Fout bij laden van machines", "error");
-        console.error(machinesResult.error);
-        return;
-      }
-      if (eventsResult.error) {
-        showStatus("Fout bij laden van service_events", "error");
-        console.error(eventsResult.error);
-        return;
-      }
-
-      customers = groupData(customersResult.data || [], machinesResult.data || [], eventsResult.data || []);
-      updateMetrics();
-      const filtered = getFilteredCustomers();
-      renderMarkers(filtered);
-      renderCustomerList(filtered);
-      fitMapToCustomers(filtered);
-
-      if (customers.length > 0) {
-        const activeId = preferredCustomerId && customers.some((c) => c.id === preferredCustomerId)
-          ? preferredCustomerId
-          : customers[0].id;
-        renderCustomer(activeId, false);
-        showStatus("Data geladen", "success");
-        setTimeout(hideStatus, 1200);
-      } else {
-        detailName.textContent = "Geen klanten gevonden";
-        detailCity.textContent = "";
-        detailAddress.textContent = "";
-        roboticsList.innerHTML = "";
-        cmList.innerHTML = "";
-        recentEvents.innerHTML = "";
-        showStatus("Geen klanten gevonden", "error");
-      }
-    }
-
-    search.addEventListener("input", () => {
-      const filtered = getFilteredCustomers();
-      renderMarkers(filtered);
-      renderCustomerList(filtered);
-      fitMapToCustomers(filtered);
-      if (currentCustomerId && filtered.some((c) => c.id === currentCustomerId)) {
-        renderCustomer(currentCustomerId, false);
-      }
-    });
-
-    refreshBtn.addEventListener("click", () => loadData(currentCustomerId));
-    closeModalTop.addEventListener("click", closeServiceModal);
-    saveServiceBtn.addEventListener("click", saveCurrentMachine);
-    openCustomerHistoryBtn.addEventListener("click", openCustomerHistory);
-    closeHistoryTop.addEventListener("click", closeHistoryModal);
-    closeHistoryBottom.addEventListener("click", closeHistoryModal);
-
-    serviceModal.addEventListener("click", (e) => { if (e.target === serviceModal) closeServiceModal(); });
-    historyModal.addEventListener("click", (e) => { if (e.target === historyModal) closeHistoryModal(); });
-
-    photoInput.addEventListener("change", () => {
-      const file = photoInput.files && photoInput.files[0];
-      if (!file) {
-        photoPreview.classList.add("hidden");
-        photoPreview.src = "";
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        photoPreview.src = reader.result;
-        photoPreview.classList.remove("hidden");
+      const state = {
+        customers: [],
+        filteredCustomers: [],
+        selectedCustomerId: null,
+        activeMachineId: null,
+        activeMachineName: "",
+        loading: false,
+        map: null,
+        markersLayer: null,
+        markersByCustomerId: new Map(),
+        customerById: new Map()
       };
-      reader.readAsDataURL(file);
-    });
 
-    initMap();
-    loadData();
+      const statusBar = document.getElementById("status-bar");
+      const customerList = document.getElementById("customer-list");
+      const detailName = document.getElementById("detail-name");
+      const detailCity = document.getElementById("detail-city");
+      const detailAddress = document.getElementById("detail-address");
+      const detailStatus = document.getElementById("detail-status");
+      const detailCount = document.getElementById("detail-count");
+      const machineList = document.getElementById("machine-list");
+      const searchInput = document.getElementById("search");
+      const mapsLink = document.getElementById("maps-link");
+      const recentEvents = document.getElementById("recent-events");
+      const openCustomerHistoryBtn = document.getElementById("open-customer-history");
+      const refreshBtn = document.getElementById("refresh-btn");
+      const metricLocaties = document.getElementById("metric-locaties");
+      const metricMachines = document.getElementById("metric-machines");
+      const metricRood = document.getElementById("metric-rood");
+      const metricOranje = document.getElementById("metric-oranje");
+      const serviceModal = document.getElementById("service-modal");
+      const modalTitle = document.getElementById("modal-title");
+      const closeModalTop = document.getElementById("close-modal-top");
+      const saveServiceBtn = document.getElementById("save-service");
+      const engineerInput = document.getElementById("engineer");
+      const noteInput = document.getElementById("service-note");
+      const photoInput = document.getElementById("photo-input");
+      const photoPreview = document.getElementById("photo-preview");
+      const historyModal = document.getElementById("history-modal");
+      const historyTitle = document.getElementById("history-title");
+      const historyList = document.getElementById("history-list");
+      const closeHistoryTop = document.getElementById("close-history-top");
+      const closeHistoryBottom = document.getElementById("close-history-bottom");
+
+      if (config.appTitle) {
+        document.title = config.appTitle;
+      }
+
+      function createClient() {
+        if (!hasValidConfig) return null;
+        return window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+          auth: { persistSession: false, autoRefreshToken: false }
+        });
+      }
+
+      const supabaseClient = createClient();
+
+      function showStatus(message, type = "info", sticky = false) {
+        statusBar.className = "mb-6 rounded-2xl border px-4 py-3 text-sm";
+        statusBar.classList.remove("hidden");
+        if (type === "error") statusBar.classList.add("border-red-500/30", "bg-red-500/10", "text-red-100");
+        else if (type === "success") statusBar.classList.add("border-emerald-500/30", "bg-emerald-500/10", "text-emerald-100");
+        else statusBar.classList.add("border-cyan-500/30", "bg-cyan-500/10", "text-cyan-100");
+        statusBar.textContent = message;
+        if (!sticky) {
+          window.clearTimeout(showStatus._timer);
+          showStatus._timer = window.setTimeout(() => statusBar.classList.add("hidden"), 2400);
+        }
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function safeText(value, fallback = "-") {
+        return value === null || value === undefined || String(value).trim() === "" ? fallback : String(value);
+      }
+
+      function normalizeValue(value) {
+        return String(value || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/ß/g, "ss")
+          .replace(/[^a-z0-9]+/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
+      function parseServiceMonth(value) {
+        if (!value || /^-+$/.test(String(value).trim())) return null;
+        const parsed = new Date(value);
+        if (!Number.isNaN(parsed.getTime())) return new Date(parsed.getFullYear(), parsed.getMonth(), 1);
+        const match = String(value).trim().match(/^(\d{1,2})[-/](\d{4})$/);
+        if (!match) return null;
+        return new Date(Number(match[2]), Number(match[1]) - 1, 1);
+      }
+
+      function monthDiff(start, end) {
+        if (!start || !end) return 999;
+        return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+      }
+
+      function machineStatus(lastService) {
+        const parsed = parseServiceMonth(lastService);
+        if (!parsed) return "Rood";
+        const months = monthDiff(parsed, new Date());
+        if (months >= 12) return "Rood";
+        if (months >= 9) return "Oranje";
+        return "Groen";
+      }
+
+      function statusPill(status) {
+        const cls = status === "Rood"
+          ? "bg-red-500/20 text-red-100"
+          : status === "Oranje"
+          ? "bg-amber-500/20 text-amber-100"
+          : "bg-emerald-500/20 text-emerald-100";
+        return `<span class="rounded-full px-3 py-1 text-xs font-semibold ${cls}">${escapeHtml(status)}</span>`;
+      }
+
+      function markerColor(status) {
+        if (status === "Rood") return "#ef4444";
+        if (status === "Oranje") return "#f59e0b";
+        return "#22c55e";
+      }
+
+      function formatDateTime(value) {
+        if (!value) return "-";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return String(value);
+        return new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium", timeStyle: "short" }).format(date);
+      }
+
+      function buildAddress(customer) {
+        const line1 = safeText(customer.address, "").trim();
+        const line2 = [safeText(customer.postcode, "").trim(), safeText(customer.city, "").trim()].filter(Boolean).join(" ");
+        const country = safeText(customer.country, "").trim();
+        return [line1, line2, country].filter(Boolean).join(", ");
+      }
+
+      function buildMapsQuery(customer) {
+        return [safeText(customer.name, "").trim(), buildAddress(customer)].filter(Boolean).join(", ");
+      }
+
+      function getCustomerStatus(customer) {
+        const machines = customer.machines || [];
+        if (!machines.length) return "Groen";
+        if (machines.some((machine) => machine.status === "Rood")) return "Rood";
+        if (machines.some((machine) => machine.status === "Oranje")) return "Oranje";
+        return "Groen";
+      }
+
+      function getFilteredCustomers() {
+        const query = normalizeValue(searchInput.value);
+        if (!query) return [...state.customers];
+        return state.customers.filter((customer) => {
+          const customerText = [
+            customer.name,
+            customer.address,
+            customer.postcode,
+            customer.city,
+            customer.country,
+            ...(customer.machines || []).flatMap((machine) => [machine.machine_name, machine.type, machine.serial_number])
+          ].filter(Boolean).map(normalizeValue).join(" ");
+          return customerText.includes(query);
+        });
+      }
+
+      function updateMetrics() {
+        let machineCount = 0;
+        let redCount = 0;
+        let amberCount = 0;
+        state.customers.forEach((customer) => {
+          (customer.machines || []).forEach((machine) => {
+            machineCount += 1;
+            if (machine.status === "Rood") redCount += 1;
+            if (machine.status === "Oranje") amberCount += 1;
+          });
+        });
+        metricLocaties.textContent = String(state.customers.length);
+        metricMachines.textContent = String(machineCount);
+        metricRood.textContent = String(redCount);
+        metricOranje.textContent = String(amberCount);
+      }
+
+      function renderCustomerList() {
+        customerList.innerHTML = "";
+        if (!state.filteredCustomers.length) {
+          customerList.innerHTML = `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen klanten gevonden</div>`;
+          return;
+        }
+        state.filteredCustomers
+          .slice()
+          .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "nl"))
+          .forEach((customer) => {
+            const isActive = customer.id === state.selectedCustomerId;
+            const button = document.createElement("button");
+            button.className = `w-full rounded-2xl border p-3 text-left transition ${isActive ? "border-cyan-400 bg-slate-800" : "border-white/10 bg-slate-800/60 hover:bg-slate-800"}`;
+            button.innerHTML = `
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="font-medium">${escapeHtml(safeText(customer.name, "(geen naam)"))}</div>
+                  <div class="mt-1 text-sm text-slate-400">${escapeHtml(buildAddress(customer) || safeText(customer.city, ""))}</div>
+                </div>
+                <div class="shrink-0">${statusPill(getCustomerStatus(customer))}</div>
+              </div>
+            `;
+            button.addEventListener("click", () => selectCustomer(customer.id, true));
+            customerList.appendChild(button);
+          });
+      }
+
+      function machineCard(machine) {
+        return `
+          <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <div class="font-medium">${escapeHtml(safeText(machine.machine_name, "Machine"))}</div>
+                <div class="mt-1 text-sm text-slate-300">Type: ${escapeHtml(safeText(machine.type))}</div>
+                <div class="mt-1 text-sm text-slate-300">Laatste service: ${escapeHtml(safeText(machine.last_service, "---"))}</div>
+                ${machine.serial_number ? `<div class="mt-1 text-xs text-slate-400">Serienummer: ${escapeHtml(machine.serial_number)}</div>` : ""}
+              </div>
+              ${statusPill(machine.status)}
+            </div>
+
+            <div class="mt-4 flex flex-wrap gap-2">
+              <button class="service-btn rounded-xl border border-white/10 px-3 py-2 text-sm" data-id="${machine.id}" data-name="${escapeHtml(safeText(machine.machine_name, "Machine"))}">Service</button>
+              <button class="history-btn rounded-xl border border-white/10 px-3 py-2 text-sm" data-id="${machine.id}" data-name="${escapeHtml(safeText(machine.machine_name, "Machine"))}">Historie</button>
+            </div>
+          </div>
+        `;
+      }
+
+      function historyCard(event) {
+        const note = safeText(event.note);
+        const engineer = safeText(event.engineer_name);
+        const serviceMonth = safeText(event.service_month);
+        const photo = event.photo_url
+          ? `<a href="${encodeURI(event.photo_url)}" target="_blank" rel="noreferrer" class="mt-3 inline-block"><img src="${encodeURI(event.photo_url)}" alt="Service foto" class="max-h-56 rounded-2xl border border-white/10 object-cover" /></a>`
+          : "";
+        return `
+          <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="font-medium">${escapeHtml(serviceMonth)}</div>
+              <div class="text-xs text-slate-400">${escapeHtml(formatDateTime(event.created_at))}</div>
+            </div>
+            <div class="mt-2 text-sm text-slate-300">Monteur: ${escapeHtml(engineer)}</div>
+            <div class="mt-2 text-sm text-slate-300">Notitie: ${escapeHtml(note)}</div>
+            ${photo}
+          </div>
+        `;
+      }
+
+      function renderRecentEvents(customer) {
+        const items = (customer.recentEvents || []).slice(0, 8);
+        if (!items.length) {
+          recentEvents.innerHTML = `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Nog geen service-events</div>`;
+          return;
+        }
+        recentEvents.innerHTML = items.map((event) => `
+          <div class="rounded-2xl border border-white/10 bg-slate-800/70 p-3">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="font-medium">${escapeHtml(safeText(event.machine_name, "Machine"))}</div>
+                <div class="mt-1 text-xs text-slate-400">${escapeHtml(safeText(event.service_month))}</div>
+              </div>
+              <div class="text-xs text-slate-400">${escapeHtml(formatDateTime(event.created_at))}</div>
+            </div>
+            <div class="mt-2 text-sm text-slate-300">${escapeHtml(safeText(event.note, "Geen notitie"))}</div>
+          </div>
+        `).join("");
+      }
+
+      function renderCustomerDetails(customerId) {
+        const customer = state.customerById.get(customerId);
+        if (!customer) return;
+        state.selectedCustomerId = customerId;
+        detailName.textContent = safeText(customer.name, "(geen naam)");
+        detailCity.textContent = safeText(customer.city, "");
+        detailAddress.textContent = buildAddress(customer);
+        detailStatus.textContent = getCustomerStatus(customer);
+        detailCount.textContent = String((customer.machines || []).length);
+        mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(buildMapsQuery(customer))}`;
+        machineList.innerHTML = customer.machines.length
+          ? customer.machines.map((machine) => machineCard(machine)).join("")
+          : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen machines gekoppeld</div>`;
+        renderRecentEvents(customer);
+        renderCustomerList();
+      }
+
+      function makeMarker(customer) {
+        const status = getCustomerStatus(customer);
+        const dot = document.createElement("div");
+        dot.className = "marker-dot";
+        dot.style.background = markerColor(status);
+        return L.marker([customer.latitude, customer.longitude], {
+          icon: L.divIcon({ className: "", html: dot.outerHTML, iconSize: [18, 18], iconAnchor: [9, 9] })
+        });
+      }
+
+      function renderMarkers() {
+        state.markersLayer.clearLayers();
+        state.markersByCustomerId.clear();
+        const bounds = [];
+        state.filteredCustomers.forEach((customer) => {
+          if (typeof customer.latitude !== "number" || typeof customer.longitude !== "number" || Number.isNaN(customer.latitude) || Number.isNaN(customer.longitude)) return;
+          const marker = makeMarker(customer);
+          marker.bindPopup(`
+            <div class="min-w-[200px]">
+              <div style="font-weight:700; margin-bottom:4px;">${escapeHtml(safeText(customer.name, "(geen naam)"))}</div>
+              <div style="font-size:12px; opacity:.8;">${escapeHtml(buildAddress(customer) || safeText(customer.city, ""))}</div>
+              <div style="margin-top:8px; font-size:12px;">${customer.machines.length} machines · ${escapeHtml(getCustomerStatus(customer))}</div>
+            </div>
+          `);
+          marker.on("click", () => selectCustomer(customer.id, false));
+          marker.addTo(state.markersLayer);
+          state.markersByCustomerId.set(customer.id, marker);
+          bounds.push([customer.latitude, customer.longitude]);
+        });
+        if (bounds.length) {
+          state.map.fitBounds(bounds, { padding: [30, 30] });
+        }
+      }
+
+      function openServiceModal(machineId, machineName) {
+        state.activeMachineId = machineId;
+        state.activeMachineName = machineName;
+        modalTitle.textContent = `Service registreren - ${machineName}`;
+        serviceModal.classList.remove("hidden");
+        serviceModal.classList.add("flex");
+      }
+
+      function closeServiceModal() {
+        serviceModal.classList.add("hidden");
+        serviceModal.classList.remove("flex");
+        engineerInput.value = "Hoofdmonteur";
+        noteInput.value = "";
+        photoInput.value = "";
+        photoPreview.src = "";
+        photoPreview.classList.add("hidden");
+      }
+
+      function openHistoryModal(title, items) {
+        historyTitle.textContent = title;
+        historyList.innerHTML = items.length
+          ? items.map((item) => historyCard(item)).join("")
+          : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Nog geen service historie</div>`;
+        historyModal.classList.remove("hidden");
+        historyModal.classList.add("flex");
+      }
+
+      function closeHistoryModal() {
+        historyModal.classList.add("hidden");
+        historyModal.classList.remove("flex");
+        historyList.innerHTML = "";
+      }
+
+      function buildPublicUrl(path) {
+        if (!path) return null;
+        const { data } = supabaseClient.storage.from(config.photoBucket).getPublicUrl(path);
+        return data?.publicUrl || null;
+      }
+
+      async function uploadPhoto(file, customerId, machineId) {
+        const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const filePath = `customers/${customerId}/machines/${machineId}/${Date.now()}-${cleanName}`;
+        const { error } = await supabaseClient.storage.from(config.photoBucket).upload(filePath, file, { upsert: false, cacheControl: "3600" });
+        if (error) throw error;
+        return buildPublicUrl(filePath);
+      }
+
+      async function loadData() {
+        if (!supabaseClient) {
+          showStatus("Vul eerst window.__APP_CONFIG__ in met je Supabase URL en anon key.", "error", true);
+          return;
+        }
+
+        try {
+          state.loading = true;
+          refreshBtn.disabled = true;
+          showStatus("Data laden...", "info", true);
+
+          const [customersRes, machinesRes, eventsRes] = await Promise.all([
+            supabaseClient.from("customers").select("id, name, address, postcode, city, country, latitude, longitude").not("id", "is", null),
+            supabaseClient.from("machines").select("id, customer_id, type, machine_name, serial_number, last_service").not("customer_id", "is", null),
+            supabaseClient.from("service_events").select("id, machine_id, service_month, engineer_name, note, created_at, photo_url").order("created_at", { ascending: false })
+          ]);
+
+          if (customersRes.error) throw customersRes.error;
+          if (machinesRes.error) throw machinesRes.error;
+          if (eventsRes.error) throw eventsRes.error;
+
+          const eventsByMachineId = new Map();
+          (eventsRes.data || []).forEach((event) => {
+            const list = eventsByMachineId.get(event.machine_id) || [];
+            list.push(event);
+            eventsByMachineId.set(event.machine_id, list);
+          });
+
+          const customers = (customersRes.data || []).map((customer) => ({
+            ...customer,
+            latitude: customer.latitude !== null ? Number(customer.latitude) : null,
+            longitude: customer.longitude !== null ? Number(customer.longitude) : null,
+            machines: [],
+            recentEvents: []
+          }));
+
+          const customerById = new Map(customers.map((customer) => [customer.id, customer]));
+
+          (machinesRes.data || []).forEach((machine) => {
+            const customer = customerById.get(machine.customer_id);
+            if (!customer) return;
+            const machineEvents = (eventsByMachineId.get(machine.id) || []).slice().sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+            const mappedMachine = {
+              ...machine,
+              status: machineStatus(machine.last_service),
+              events: machineEvents
+            };
+            customer.machines.push(mappedMachine);
+            machineEvents.forEach((event) => {
+              customer.recentEvents.push({ ...event, machine_name: machine.machine_name || "Machine" });
+            });
+          });
+
+          customers.forEach((customer) => {
+            customer.machines.sort((a, b) => String(a.machine_name || "").localeCompare(String(b.machine_name || ""), "nl"));
+            customer.recentEvents.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+          });
+
+          state.customers = customers;
+          state.customerById = customerById;
+          state.filteredCustomers = getFilteredCustomers();
+
+          updateMetrics();
+          renderCustomerList();
+          renderMarkers();
+
+          const preferredId = state.selectedCustomerId && state.customerById.has(state.selectedCustomerId)
+            ? state.selectedCustomerId
+            : (state.filteredCustomers[0] && state.filteredCustomers[0].id);
+
+          if (preferredId) {
+            selectCustomer(preferredId, false);
+          }
+
+          showStatus("Data geladen", "success");
+        } catch (error) {
+          console.error(error);
+          showStatus(`Laden mislukt: ${error.message || "onbekende fout"}`, "error", true);
+        } finally {
+          state.loading = false;
+          refreshBtn.disabled = false;
+        }
+      }
+
+      function selectCustomer(customerId, centerOnMap) {
+        renderCustomerDetails(customerId);
+        if (centerOnMap) {
+          const marker = state.markersByCustomerId.get(customerId);
+          if (marker) {
+            state.map.setView(marker.getLatLng(), Math.max(state.map.getZoom(), 12), { animate: true });
+            marker.openPopup();
+          }
+        }
+      }
+
+      async function saveCurrentMachine() {
+        const customerId = state.selectedCustomerId;
+        const machineId = state.activeMachineId;
+        if (!customerId || !machineId || !supabaseClient) return;
+
+        const now = new Date();
+        const serviceMonth = `${String(now.getMonth() + 1).padStart(2, "0")}-${now.getFullYear()}`;
+        const engineerName = engineerInput.value.trim() || "Hoofdmonteur";
+        const note = noteInput.value.trim();
+        const file = photoInput.files && photoInput.files[0] ? photoInput.files[0] : null;
+
+        try {
+          saveServiceBtn.disabled = true;
+          saveServiceBtn.textContent = "Opslaan...";
+
+          let photoUrl = null;
+          if (file) {
+            photoUrl = await uploadPhoto(file, customerId, machineId);
+          }
+
+          const { error: updateError } = await supabaseClient.from("machines").update({ last_service: serviceMonth }).eq("id", machineId);
+          if (updateError) throw updateError;
+
+          const { error: eventError } = await supabaseClient.from("service_events").insert({
+            machine_id: machineId,
+            service_month: serviceMonth,
+            engineer_name: engineerName,
+            note,
+            photo_url: photoUrl
+          });
+          if (eventError) throw eventError;
+
+          closeServiceModal();
+          await loadData();
+          if (state.customerById.has(customerId)) selectCustomer(customerId, false);
+          showStatus(`Service opgeslagen voor ${state.activeMachineName}`, "success");
+          state.activeMachineId = null;
+          state.activeMachineName = "";
+        } catch (error) {
+          console.error(error);
+          showStatus(`Opslaan mislukt: ${error.message || "onbekende fout"}`, "error", true);
+        } finally {
+          saveServiceBtn.disabled = false;
+          saveServiceBtn.textContent = "Opslaan";
+        }
+      }
+
+      function initMap() {
+        state.map = L.map("map", { zoomControl: true }).setView([52.1326, 5.2913], 7);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19,
+          attribution: "&copy; OpenStreetMap-bijdragers"
+        }).addTo(state.map);
+        state.markersLayer = L.layerGroup().addTo(state.map);
+      }
+
+      function debounce(fn, delay) {
+        let timer = null;
+        return (...args) => {
+          clearTimeout(timer);
+          timer = setTimeout(() => fn(...args), delay);
+        };
+      }
+
+      function bindEvents() {
+        searchInput.addEventListener("input", debounce(() => {
+          state.filteredCustomers = getFilteredCustomers();
+          renderCustomerList();
+          renderMarkers();
+          if (!state.filteredCustomers.some((customer) => customer.id === state.selectedCustomerId)) {
+            const first = state.filteredCustomers[0];
+            if (first) selectCustomer(first.id, false);
+          }
+        }, 120));
+
+        refreshBtn.addEventListener("click", loadData);
+        closeModalTop.addEventListener("click", closeServiceModal);
+        saveServiceBtn.addEventListener("click", saveCurrentMachine);
+        closeHistoryTop.addEventListener("click", closeHistoryModal);
+        closeHistoryBottom.addEventListener("click", closeHistoryModal);
+
+        serviceModal.addEventListener("click", (event) => {
+          if (event.target === serviceModal) closeServiceModal();
+        });
+        historyModal.addEventListener("click", (event) => {
+          if (event.target === historyModal) closeHistoryModal();
+        });
+
+        photoInput.addEventListener("change", () => {
+          const file = photoInput.files && photoInput.files[0];
+          if (!file) {
+            photoPreview.src = "";
+            photoPreview.classList.add("hidden");
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = () => {
+            photoPreview.src = reader.result;
+            photoPreview.classList.remove("hidden");
+          };
+          reader.readAsDataURL(file);
+        });
+
+        machineList.addEventListener("click", (event) => {
+          const serviceButton = event.target.closest(".service-btn");
+          const historyButton = event.target.closest(".history-btn");
+          if (serviceButton) {
+            openServiceModal(serviceButton.dataset.id, serviceButton.dataset.name || "Machine");
+            return;
+          }
+          if (historyButton) {
+            const customer = state.customerById.get(state.selectedCustomerId);
+            const machine = customer?.machines.find((item) => String(item.id) === String(historyButton.dataset.id));
+            openHistoryModal(`Service historie - ${historyButton.dataset.name || "Machine"}`, machine?.events || []);
+          }
+        });
+
+        openCustomerHistoryBtn.addEventListener("click", () => {
+          const customer = state.customerById.get(state.selectedCustomerId);
+          if (!customer) return;
+          openHistoryModal(`Volledige historie - ${safeText(customer.name, "Klant")}`, customer.recentEvents || []);
+        });
+      }
+
+      initMap();
+      bindEvents();
+      loadData();
+    })();
   </script>
 </body>
 </html>
