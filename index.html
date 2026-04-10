@@ -6,11 +6,25 @@
   <title>Van den Bos Robotics Service</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <style>
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip {
+      background: rgb(15 23 42);
+      color: white;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .leaflet-container { background: #020617; }
+    .custom-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148,163,184,.3); border-radius: 9999px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  </style>
 </head>
 <body class="bg-slate-950 text-white">
-  <div class="min-h-screen p-6">
+  <div class="min-h-screen p-4 md:p-6">
     <div class="mx-auto max-w-7xl">
-      <header class="mb-6 rounded-[28px] border border-white/10 bg-slate-900 px-8 py-7 shadow-2xl shadow-cyan-950/20">
+      <header class="mb-6 rounded-[28px] border border-white/10 bg-slate-900 px-6 py-6 shadow-2xl shadow-cyan-950/20 md:px-8 md:py-7">
         <div class="flex flex-col gap-3">
           <div class="text-xs uppercase tracking-[0.45em] text-cyan-300">Service App</div>
           <div class="flex flex-wrap items-end gap-x-3 gap-y-1 leading-none">
@@ -48,39 +62,20 @@
         <section class="rounded-3xl border border-white/10 bg-slate-900 p-5">
           <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 class="text-xl font-semibold">Europa kaart</h2>
-              <p class="text-sm text-slate-300">Klik op een klant of kies uit de lijst</p>
+              <h2 class="text-xl font-semibold">Kaart met echte locaties</h2>
+              <p class="text-sm text-slate-300">1 marker per klant, direct op basis van latitude en longitude uit customers</p>
             </div>
-
-            <input
-              id="search"
-              placeholder="Zoek klant"
-              class="rounded-2xl border border-white/10 bg-slate-800 px-4 py-2 text-sm outline-none"
-            />
+            <div class="flex w-full flex-col gap-2 md:w-auto md:flex-row">
+              <input id="search" placeholder="Zoek klant, plaats, machine" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-2 text-sm outline-none md:w-72" />
+              <button id="refresh-btn" class="rounded-2xl border border-white/10 bg-slate-800 px-4 py-2 text-sm">Verversen</button>
+            </div>
           </div>
 
-          <div id="map-area" class="relative h-[420px] overflow-hidden rounded-[30px] border border-white/10 bg-slate-900">
-            <div class="absolute inset-0 z-0 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.10),_transparent_35%),linear-gradient(180deg,_#0f172a_0%,_#111827_100%)]"></div>
-
-            <svg viewBox="0 0 1000 700" class="absolute inset-0 z-10 h-full w-full opacity-30 pointer-events-none">
-              <g fill="none" stroke="#94a3b8" stroke-width="3">
-                <path d="M144 170 L186 140 L245 134 L302 162 L339 210 L334 246 L299 287 L241 282 L206 244 L167 230 L146 196 Z"/>
-                <path d="M308 182 L333 173 L349 186 L346 208 L324 212 L309 198 Z"/>
-                <path d="M351 140 L420 112 L489 119 L540 154 L592 161 L648 184 L692 228 L698 276 L662 322 L604 346 L544 333 L510 311 L482 267 L443 240 L399 220 L361 182 Z"/>
-                <path d="M531 343 L582 355 L608 386 L594 421 L550 432 L520 407 L513 371 Z"/>
-                <path d="M404 235 L452 245 L484 267 L504 304 L484 333 L433 339 L392 314 L380 280 Z"/>
-                <path d="M573 191 L620 189 L651 212 L659 247 L643 274 L604 280 L575 265 L565 232 Z"/>
-                <path d="M709 209 L770 212 L810 241 L812 284 L772 304 L722 300 L693 268 L694 229 Z"/>
-                <path d="M226 330 L270 338 L291 366 L286 401 L246 412 L212 390 L206 358 Z"/>
-                <path d="M196 106 L214 94 L230 102 L226 120 L206 122 Z"/>
-                <path d="M743 118 L774 111 L793 130 L785 153 L758 157 L740 142 Z"/>
-              </g>
-            </svg>
-          </div>
+          <div id="map" class="h-[460px] overflow-hidden rounded-[30px] border border-white/10"></div>
 
           <div class="mt-4">
             <div class="mb-2 text-sm text-slate-300">Klantenlijst</div>
-            <div id="customer-list" class="max-h-[220px] space-y-2 overflow-auto pr-1"></div>
+            <div id="customer-list" class="custom-scrollbar max-h-[260px] space-y-2 overflow-auto pr-1"></div>
           </div>
         </section>
 
@@ -104,15 +99,13 @@
           </div>
 
           <div class="mt-5 flex flex-wrap gap-2">
-            <a
-              id="maps-link"
-              href="#"
-              target="_blank"
-              rel="noreferrer"
-              class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950"
-            >
-              Maps
-            </a>
+            <a id="maps-link" href="#" target="_blank" rel="noreferrer" class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">Maps</a>
+            <button id="open-customer-history" class="rounded-2xl border border-white/10 px-4 py-2 text-sm">Volledige historie</button>
+          </div>
+
+          <div class="mt-6 rounded-2xl border border-white/10 bg-slate-800/40 p-4">
+            <div class="mb-2 text-sm font-semibold">Recente service-events</div>
+            <div id="recent-events" class="custom-scrollbar max-h-[200px] space-y-3 overflow-auto"></div>
           </div>
 
           <div class="mt-6">
@@ -131,86 +124,64 @@
 
   <div id="service-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
     <div class="w-full max-w-lg rounded-3xl border border-white/10 bg-slate-900 p-6">
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between gap-3">
         <div>
           <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Service</div>
           <h3 id="modal-title" class="mt-2 text-2xl font-semibold">Service registreren</h3>
         </div>
-
-        <button id="close-modal-top" class="rounded-xl border border-white/10 px-3 py-2 text-sm">
-          Sluiten
-        </button>
+        <button id="close-modal-top" class="rounded-xl border border-white/10 px-3 py-2 text-sm">Sluiten</button>
       </div>
 
       <div class="mt-5 grid gap-4">
         <label class="block">
           <div class="mb-2 text-sm text-slate-300">Monteur</div>
-          <input
-            id="engineer"
-            class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none"
-            value="Hoofdmonteur"
-          />
+          <input id="engineer" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none" value="Hoofdmonteur" />
         </label>
 
         <label class="block">
           <div class="mb-2 text-sm text-slate-300">Notitie</div>
-          <textarea
-            id="service-note"
-            rows="4"
-            class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none"
-            placeholder="Bijvoorbeeld: onderhoud uitgevoerd"
-          ></textarea>
+          <textarea id="service-note" rows="4" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none" placeholder="Bijvoorbeeld: onderhoud uitgevoerd"></textarea>
         </label>
 
         <label class="block">
           <div class="mb-2 text-sm text-slate-300">Foto</div>
-          <input
-            type="file"
-            id="photo-input"
-            accept="image/*"
-            class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none file:mr-4 file:rounded-xl file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-900"
-          />
+          <input type="file" id="photo-input" accept="image/*" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none file:mr-4 file:rounded-xl file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-900" />
         </label>
+
+        <img id="photo-preview" class="hidden max-h-56 rounded-2xl border border-white/10 object-cover" alt="Preview" />
       </div>
 
       <div class="mt-5 flex justify-end">
-        <button id="save-service" class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">
-          Opslaan
-        </button>
+        <button id="save-service" class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">Opslaan</button>
       </div>
     </div>
   </div>
 
   <div id="history-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
-    <div class="w-full max-w-2xl rounded-3xl border border-white/10 bg-slate-900 p-6">
-      <div class="flex items-center justify-between">
+    <div class="w-full max-w-3xl rounded-3xl border border-white/10 bg-slate-900 p-6">
+      <div class="flex items-center justify-between gap-3">
         <div>
           <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Historie</div>
           <h3 id="history-title" class="mt-2 text-2xl font-semibold">Service historie</h3>
         </div>
-
-        <button id="close-history-top" class="rounded-xl border border-white/10 px-3 py-2 text-sm">
-          Sluiten
-        </button>
+        <button id="close-history-top" class="rounded-xl border border-white/10 px-3 py-2 text-sm">Sluiten</button>
       </div>
 
-      <div id="history-list" class="mt-5 max-h-[60vh] space-y-3 overflow-auto"></div>
+      <div id="history-list" class="custom-scrollbar mt-5 max-h-[65vh] space-y-3 overflow-auto"></div>
 
       <div class="mt-5 flex justify-end">
-        <button id="close-history-bottom" class="rounded-2xl border border-white/10 px-4 py-2 text-sm">
-          Sluiten
-        </button>
+        <button id="close-history-bottom" class="rounded-2xl border border-white/10 px-4 py-2 text-sm">Sluiten</button>
       </div>
     </div>
   </div>
 
   <script>
-    const SUPABASE_URL = "https://tbtoaeraevuygajyaggj.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidG9hZXJhZXZ1eWdhanlhZ2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MDUyNzksImV4cCI6MjA5MDA4MTI3OX0.D8gKf3hIwQnP8GULWgN2pINrttdR_oUc_WSK50SQl9c";
+    const SUPABASE_URL = window.SUPABASE_URL || "https://YOUR_PROJECT.supabase.co";
+    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "YOUR_SUPABASE_ANON_KEY";
+    const PHOTO_BUCKET = window.PHOTO_BUCKET || "service-photos";
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const statusBar = document.getElementById("status-bar");
-    const mapArea = document.getElementById("map-area");
     const customerList = document.getElementById("customer-list");
     const detailName = document.getElementById("detail-name");
     const detailCity = document.getElementById("detail-city");
@@ -221,6 +192,9 @@
     const cmList = document.getElementById("cm-list");
     const search = document.getElementById("search");
     const mapsLink = document.getElementById("maps-link");
+    const recentEvents = document.getElementById("recent-events");
+    const openCustomerHistoryBtn = document.getElementById("open-customer-history");
+    const refreshBtn = document.getElementById("refresh-btn");
 
     const metricLocaties = document.getElementById("metric-locaties");
     const metricMachines = document.getElementById("metric-machines");
@@ -234,6 +208,7 @@
     const engineerInput = document.getElementById("engineer");
     const noteInput = document.getElementById("service-note");
     const photoInput = document.getElementById("photo-input");
+    const photoPreview = document.getElementById("photo-preview");
 
     const historyModal = document.getElementById("history-modal");
     const historyTitle = document.getElementById("history-title");
@@ -245,25 +220,20 @@
     let currentCustomerId = null;
     let currentMachineId = null;
     let currentMachineName = "";
+    let map = null;
+    let markersLayer = null;
+    let markersByCustomerId = new Map();
 
     function showStatus(message, type = "info") {
       statusBar.className = "mb-6 rounded-2xl border px-4 py-3 text-sm";
       statusBar.classList.remove("hidden");
-
-      if (type === "error") {
-        statusBar.classList.add("border-red-500/30", "bg-red-500/10", "text-red-100");
-      } else if (type === "success") {
-        statusBar.classList.add("border-emerald-500/30", "bg-emerald-500/10", "text-emerald-100");
-      } else {
-        statusBar.classList.add("border-cyan-500/30", "bg-cyan-500/10", "text-cyan-100");
-      }
-
+      if (type === "error") statusBar.classList.add("border-red-500/30", "bg-red-500/10", "text-red-100");
+      else if (type === "success") statusBar.classList.add("border-emerald-500/30", "bg-emerald-500/10", "text-emerald-100");
+      else statusBar.classList.add("border-cyan-500/30", "bg-cyan-500/10", "text-cyan-100");
       statusBar.textContent = message;
     }
 
-    function hideStatus() {
-      statusBar.classList.add("hidden");
-    }
+    function hideStatus() { statusBar.classList.add("hidden"); }
 
     function normalizeValue(value) {
       return String(value || "")
@@ -276,8 +246,14 @@
         .trim();
     }
 
+    function safeText(value, fallback = "-") {
+      return value === null || value === undefined || String(value).trim() === "" ? fallback : String(value);
+    }
+
     function parseServiceMonth(value) {
       if (!value || /^-+$/.test(String(value).trim())) return null;
+      const parsed = new Date(value);
+      if (!Number.isNaN(parsed.getTime())) return new Date(parsed.getFullYear(), parsed.getMonth(), 1);
       const match = String(value).trim().match(/^(\d{1,2})[-/](\d{4})$/);
       if (!match) return null;
       return new Date(Number(match[2]), Number(match[1]) - 1, 1);
@@ -291,8 +267,7 @@
     function machineStatus(lastService) {
       const parsed = parseServiceMonth(lastService);
       if (!parsed) return "Rood";
-      const now = new Date();
-      const months = monthDiff(parsed, now);
+      const months = monthDiff(parsed, new Date());
       if (months >= 12) return "Rood";
       if (months >= 9) return "Oranje";
       return "Groen";
@@ -306,68 +281,19 @@
       return "Groen";
     }
 
-    function markerColorClass(status) {
-      if (status === "Rood") return "bg-red-500";
-      if (status === "Oranje") return "bg-amber-400";
-      return "bg-emerald-500";
+    function markerColor(status) {
+      if (status === "Rood") return "#ef4444";
+      if (status === "Oranje") return "#f59e0b";
+      return "#10b981";
     }
 
     function statusPill(status) {
-      const cls =
-        status === "Rood"
-          ? "bg-red-500/20 text-red-100"
-          : status === "Oranje"
-          ? "bg-amber-500/20 text-amber-100"
-          : "bg-emerald-500/20 text-emerald-100";
-
+      const cls = status === "Rood"
+        ? "bg-red-500/20 text-red-100"
+        : status === "Oranje"
+        ? "bg-amber-500/20 text-amber-100"
+        : "bg-emerald-500/20 text-emerald-100";
       return `<span class="rounded-full px-3 py-1 text-xs font-semibold ${cls}">${status}</span>`;
-    }
-
-    function machineCard(machine) {
-      return `
-        <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <div class="font-medium">${machine.name}</div>
-              <div class="mt-1 text-sm text-slate-300">Laatste service: ${machine.lastService || "---"}</div>
-              ${machine.customerLabel ? `<div class="mt-1 text-xs text-slate-400">${machine.customerLabel}</div>` : ""}
-            </div>
-            ${statusPill(machine.status)}
-          </div>
-
-          <div class="mt-4 flex flex-wrap gap-2">
-            <button class="service-btn rounded-xl border border-white/10 px-3 py-2 text-sm" data-id="${machine.id}" data-name="${machine.name}">
-              Service
-            </button>
-            <button class="history-btn rounded-xl border border-white/10 px-3 py-2 text-sm" data-id="${machine.id}" data-name="${machine.name}">
-              Historie
-            </button>
-          </div>
-        </div>
-      `;
-    }
-
-    function historyCard(event) {
-      const note = event.note && event.note.trim() ? event.note : "-";
-      const engineer = event.engineer_name && event.engineer_name.trim() ? event.engineer_name : "-";
-      const month = event.service_month || "-";
-      const photo = event.photo_url
-        ? `<a href="${event.photo_url}" target="_blank" rel="noreferrer" class="mt-3 inline-block">
-             <img src="${event.photo_url}" alt="Service foto" class="max-h-56 rounded-2xl border border-white/10 object-cover" />
-           </a>`
-        : "";
-
-      return `
-        <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="font-medium">${month}</div>
-            <div class="text-xs text-slate-400">${event.created_at ? new Date(event.created_at).toLocaleString("nl-NL") : ""}</div>
-          </div>
-          <div class="mt-2 text-sm text-slate-300">Monteur: ${engineer}</div>
-          <div class="mt-2 text-sm text-slate-300">Notitie: ${note}</div>
-          ${photo}
-        </div>
-      `;
     }
 
     function buildAddressParts(row) {
@@ -376,42 +302,65 @@
       const city = String(row.city || "").trim();
       const country = String(row.country || "").trim();
       const line2 = [postcode, city].filter(Boolean).join(" ").trim();
-      const full = [street, line2, country].filter(Boolean).join(", ");
-      return { full };
+      return { full: [street, line2, country].filter(Boolean).join(", ") };
     }
 
-    function buildCustomerAddress(customer) {
-      return buildAddressParts(customer).full;
-    }
+    function buildCustomerAddress(customer) { return buildAddressParts(customer).full; }
 
     function buildMapsQuery(customer) {
       const address = buildCustomerAddress(customer);
       const name = String(customer.name || "").trim();
       if (address) return [name, address].filter(Boolean).join(", ");
       if (customer.city) return [name, customer.city, customer.country || ""].filter(Boolean).join(", ");
-      return "";
+      return name;
     }
 
-    function projectToEurope(lat, lng) {
-      const minLat = 35;
-      const maxLat = 71;
-      const minLng = -12;
-      const maxLng = 32;
+    function machineCard(machine) {
+      return `
+        <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="font-medium">${safeText(machine.name, "Machine")}</div>
+              <div class="mt-1 text-sm text-slate-300">Laatste service: ${safeText(machine.lastService, "---")}</div>
+              <div class="mt-1 text-xs text-slate-400">${machine.events.length} events</div>
+            </div>
+            ${statusPill(machine.status)}
+          </div>
 
-      const x = ((Number(lng) - minLng) / (maxLng - minLng)) * 100;
-      const y = 100 - ((Number(lat) - minLat) / (maxLat - minLat)) * 100;
+          ${machine.latestEvent ? `
+            <div class="mt-3 rounded-xl border border-white/10 bg-slate-900/40 p-3 text-sm text-slate-300">
+              <div class="font-medium text-white">Laatste notitie</div>
+              <div class="mt-1">${safeText(machine.latestEvent.note, "Geen notitie")}</div>
+            </div>` : ""}
 
-      return {
-        left: `${Math.max(4, Math.min(96, x))}%`,
-        top: `${Math.max(6, Math.min(94, y))}%`
-      };
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button class="service-btn rounded-xl border border-white/10 px-3 py-2 text-sm" data-id="${machine.id}" data-name="${safeText(machine.name, "Machine")}">Service</button>
+            <button class="history-btn rounded-xl border border-white/10 px-3 py-2 text-sm" data-id="${machine.id}" data-name="${safeText(machine.name, "Machine")}">Historie</button>
+          </div>
+        </div>`;
+    }
+
+    function historyCard(event) {
+      const photo = event.photo_url
+        ? `<a href="${event.photo_url}" target="_blank" rel="noreferrer" class="mt-3 inline-block"><img src="${event.photo_url}" alt="Service foto" class="max-h-56 rounded-2xl border border-white/10 object-cover" /></a>`
+        : "";
+      return `
+        <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div class="font-medium">${safeText(event.machine_name, "Machine")}</div>
+              <div class="mt-1 text-sm text-slate-300">${safeText(event.service_month, "-")}</div>
+            </div>
+            <div class="text-xs text-slate-400">${event.created_at ? new Date(event.created_at).toLocaleString("nl-NL") : ""}</div>
+          </div>
+          <div class="mt-2 text-sm text-slate-300">Monteur: ${safeText(event.engineer_name, "-")}</div>
+          <div class="mt-2 text-sm text-slate-300">Notitie: ${safeText(event.note, "-")}</div>
+          ${photo}
+        </div>`;
     }
 
     function updateMetrics() {
-      let machines = 0;
-      let rood = 0;
-      let oranje = 0;
-
+      let machines = 0, rood = 0, oranje = 0;
       customers.forEach((c) => {
         const all = [...c.robotics, ...c.cm];
         machines += all.length;
@@ -420,7 +369,6 @@
           if (m.status === "Oranje") oranje++;
         });
       });
-
       metricLocaties.textContent = customers.length;
       metricMachines.textContent = machines;
       metricRood.textContent = rood;
@@ -428,11 +376,11 @@
     }
 
     function getFilteredCustomers() {
-      const q = search.value.trim().toLowerCase();
+      const q = normalizeValue(search.value);
       if (!q) return customers;
-
       return customers.filter((c) => {
-        const txt = `${c.name} ${c.city} ${c.address || ""} ${c.postcode || ""}`.toLowerCase();
+        const machineText = [...c.robotics, ...c.cm].map((m) => m.name).join(" ");
+        const txt = normalizeValue(`${c.name} ${c.city} ${c.address || ""} ${c.postcode || ""} ${machineText}`);
         return txt.includes(q);
       });
     }
@@ -440,54 +388,91 @@
     function renderCustomerList(filteredCustomers = null) {
       const list = filteredCustomers || customers;
       customerList.innerHTML = "";
-
       if (!list.length) {
         customerList.innerHTML = `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen klanten gevonden</div>`;
         return;
       }
+      [...list].sort((a, b) => (a.name || "").localeCompare(b.name || "")).forEach((customer) => {
+        const isActive = customer.id === currentCustomerId;
+        const btn = document.createElement("button");
+        btn.className = `w-full rounded-2xl border p-3 text-left transition ${isActive ? "border-cyan-400/50 bg-slate-800" : "border-white/10 bg-slate-800/60 hover:bg-slate-800"}`;
+        btn.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="font-medium">${safeText(customer.name, "(geen naam)")}</div>
+              <div class="mt-1 text-sm text-slate-400">${safeText(buildCustomerAddress(customer), safeText(customer.city, ""))}</div>
+            </div>
+            ${statusPill(getCustomerStatus(customer))}
+          </div>`;
+        btn.addEventListener("click", () => renderCustomer(customer.id, true));
+        customerList.appendChild(btn);
+      });
+    }
 
-      [...list]
-        .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
-        .forEach((customer) => {
-          const btn = document.createElement("button");
-          btn.className = "w-full rounded-2xl border border-white/10 bg-slate-800/60 p-3 text-left transition hover:bg-slate-800";
-          btn.innerHTML = `
-            <div class="font-medium">${customer.name || "(geen naam)"}</div>
-            <div class="mt-1 text-sm text-slate-400">${buildCustomerAddress(customer) || customer.city || ""}</div>
-          `;
-          btn.addEventListener("click", () => renderCustomer(customer.id));
-          customerList.appendChild(btn);
-        });
+    function createMarkerIcon(status) {
+      return L.divIcon({
+        className: "",
+        html: `<div style="width:18px;height:18px;border-radius:9999px;background:${markerColor(status)};border:3px solid rgba(255,255,255,.9);box-shadow:0 0 0 6px rgba(15,23,42,.35)"></div>`,
+        iconSize: [18, 18],
+        iconAnchor: [9, 9]
+      });
+    }
+
+    function initMap() {
+      map = L.map("map", { zoomControl: true }).setView([51.8, 8.4], 5);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap"
+      }).addTo(map);
+      markersLayer = L.layerGroup().addTo(map);
+    }
+
+    function fitMapToCustomers(filteredCustomers = null) {
+      const list = (filteredCustomers || customers).filter((c) => Number.isFinite(c.latitude) && Number.isFinite(c.longitude));
+      if (!list.length) return;
+      const bounds = L.latLngBounds(list.map((c) => [c.latitude, c.longitude]));
+      map.fitBounds(bounds.pad(0.18));
     }
 
     function renderMarkers(filteredCustomers = null) {
-      document.querySelectorAll(".dynamic-marker").forEach((el) => el.remove());
-
       const list = filteredCustomers || customers;
-
+      markersLayer.clearLayers();
+      markersByCustomerId = new Map();
       list.forEach((c) => {
-        if (typeof c.latitude !== "number" || typeof c.longitude !== "number" || Number.isNaN(c.latitude) || Number.isNaN(c.longitude)) {
-          return;
-        }
-
-        const pos = projectToEurope(c.latitude, c.longitude);
+        if (!Number.isFinite(c.latitude) || !Number.isFinite(c.longitude)) return;
         const status = getCustomerStatus(c);
-
-        const btn = document.createElement("button");
-        btn.className = "dynamic-marker absolute z-30 -translate-x-1/2 -translate-y-1/2";
-        btn.style.left = pos.left;
-        btn.style.top = pos.top;
-        btn.title = `${c.name} — ${buildCustomerAddress(c)}`;
-
-        btn.innerHTML = `
-          <div class="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-black shadow-lg ${markerColorClass(status)}">
-            VDB
-          </div>
-        `;
-
-        btn.addEventListener("click", () => renderCustomer(c.id));
-        mapArea.appendChild(btn);
+        const marker = L.marker([c.latitude, c.longitude], { icon: createMarkerIcon(status) });
+        const machines = [...c.robotics, ...c.cm];
+        marker.bindPopup(`
+          <div class="min-w-[200px]">
+            <div class="font-semibold">${safeText(c.name, "(geen naam)")}</div>
+            <div class="mt-1 text-sm">${safeText(buildCustomerAddress(c), "Geen adres")}</div>
+            <div class="mt-2 text-sm">${machines.length} machines</div>
+          </div>`);
+        marker.on("click", () => renderCustomer(c.id, false));
+        marker.addTo(markersLayer);
+        markersByCustomerId.set(c.id, marker);
       });
+    }
+
+    function focusOnCustomer(customer) {
+      if (!customer || !Number.isFinite(customer.latitude) || !Number.isFinite(customer.longitude)) return;
+      map.setView([customer.latitude, customer.longitude], Math.max(map.getZoom(), 11), { animate: true });
+      const marker = markersByCustomerId.get(customer.id);
+      if (marker) marker.openPopup();
+    }
+
+    function renderRecentEvents(customer) {
+      const allEvents = [...customer.robotics, ...customer.cm]
+        .flatMap((machine) => machine.events.map((event) => ({ ...event, machine_name: machine.name })))
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+        .slice(0, 6);
+
+      if (!allEvents.length) {
+        recentEvents.innerHTML = `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Nog geen service historie</div>`;
+        return;
+      }
+      recentEvents.innerHTML = allEvents.map(historyCard).join("");
     }
 
     function bindMachineButtons() {
@@ -499,35 +484,34 @@
           openServiceModal();
         });
       });
-
       document.querySelectorAll(".history-btn").forEach((btn) => {
-        btn.addEventListener("click", () => openHistory(btn.dataset.id, btn.dataset.name));
+        btn.addEventListener("click", () => openMachineHistory(btn.dataset.id, btn.dataset.name));
       });
     }
 
-    function renderCustomer(customerId) {
+    function renderCustomer(customerId, focusMap = false) {
       const c = customers.find((item) => item.id === customerId);
       if (!c) return;
-
       currentCustomerId = customerId;
-      detailName.textContent = c.name || "(geen naam)";
-      detailCity.textContent = c.city || "";
-      detailAddress.textContent = buildCustomerAddress(c) || "";
+      detailName.textContent = safeText(c.name, "(geen naam)");
+      detailCity.textContent = safeText(c.city, "");
+      detailAddress.textContent = safeText(buildCustomerAddress(c), "");
       detailStatus.textContent = getCustomerStatus(c);
       detailCount.textContent = c.robotics.length + c.cm.length;
       mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(buildMapsQuery(c))}`;
 
       roboticsList.innerHTML = c.robotics.length
-        ? c.robotics.map((m) => machineCard(m)).join("")
+        ? c.robotics.map(machineCard).join("")
         : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen robotics machines</div>`;
 
       cmList.innerHTML = c.cm.length
-        ? c.cm.map((m) => machineCard(m)).join("")
+        ? c.cm.map(machineCard).join("")
         : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen CM machines</div>`;
 
+      renderRecentEvents(c);
       bindMachineButtons();
-      updateMetrics();
-      renderMarkers(getFilteredCustomers());
+      renderCustomerList(getFilteredCustomers());
+      if (focusMap) focusOnCustomer(c);
     }
 
     function openServiceModal() {
@@ -541,6 +525,8 @@
       engineerInput.value = "Hoofdmonteur";
       noteInput.value = "";
       photoInput.value = "";
+      photoPreview.src = "";
+      photoPreview.classList.add("hidden");
     }
 
     function openHistoryModal() {
@@ -554,102 +540,78 @@
       historyList.innerHTML = "";
     }
 
-    async function openHistory(machineId, machineName) {
+    async function openMachineHistory(machineId, machineName) {
       historyTitle.textContent = `Service historie - ${machineName}`;
       historyList.innerHTML = `<div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4 text-sm text-slate-300">Laden...</div>`;
       openHistoryModal();
-
       const { data, error } = await supabaseClient
         .from("service_events")
         .select("service_month, engineer_name, note, created_at, photo_url")
         .eq("machine_id", machineId)
         .order("created_at", { ascending: false });
-
       if (error) {
         historyList.innerHTML = `<div class="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-100">Fout bij laden van historie</div>`;
-        console.error(error);
         return;
       }
-
-      if (!data || data.length === 0) {
+      if (!data || !data.length) {
         historyList.innerHTML = `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Nog geen service historie</div>`;
         return;
       }
-
-      historyList.innerHTML = data.map((event) => historyCard(event)).join("");
+      historyList.innerHTML = data.map((event) => historyCard({ ...event, machine_name: machineName })).join("");
     }
 
-    async function uploadPhoto(file) {
+    function openCustomerHistory() {
+      const customer = customers.find((item) => item.id === currentCustomerId);
+      if (!customer) return;
+      historyTitle.textContent = `Volledige historie - ${safeText(customer.name, "Klant")}`;
+      const allEvents = [...customer.robotics, ...customer.cm]
+        .flatMap((machine) => machine.events.map((event) => ({ ...event, machine_name: machine.name })))
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      historyList.innerHTML = allEvents.length
+        ? allEvents.map(historyCard).join("")
+        : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Nog geen service historie</div>`;
+      openHistoryModal();
+    }
+
+    async function uploadPhoto(file, machineId) {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const filePath = `service-events/${Date.now()}-${safeName}`;
-
-      const { error: uploadError } = await supabaseClient.storage
-        .from("service-photos")
-        .upload(filePath, file);
-
+      const filePath = `service-events/${machineId}/${Date.now()}-${safeName}`;
+      const { error: uploadError } = await supabaseClient.storage.from(PHOTO_BUCKET).upload(filePath, file, { upsert: false });
       if (uploadError) throw uploadError;
-
-      const { data } = supabaseClient.storage
-        .from("service-photos")
-        .getPublicUrl(filePath);
-
+      const { data } = supabaseClient.storage.from(PHOTO_BUCKET).getPublicUrl(filePath);
       return data.publicUrl;
     }
 
     async function saveCurrentMachine() {
       if (!currentMachineId || !currentCustomerId) return;
-
       const now = new Date();
       const value = `${String(now.getMonth() + 1).padStart(2, "0")}-${now.getFullYear()}`;
       const engineerName = engineerInput.value.trim() || "Hoofdmonteur";
       const note = noteInput.value.trim();
       const file = photoInput.files && photoInput.files[0] ? photoInput.files[0] : null;
-
       saveServiceBtn.disabled = true;
       saveServiceBtn.textContent = "Opslaan...";
-
       try {
         let photoUrl = null;
-        if (file) photoUrl = await uploadPhoto(file);
+        if (file) photoUrl = await uploadPhoto(file, currentMachineId);
 
-        const { error: updateError } = await supabaseClient
-          .from("machines")
-          .update({ last_service: value })
-          .eq("id", currentMachineId);
-
+        const { error: updateError } = await supabaseClient.from("machines").update({ last_service: value }).eq("id", currentMachineId);
         if (updateError) throw updateError;
 
-        const { error: eventError } = await supabaseClient
-          .from("service_events")
-          .insert({
-            machine_id: currentMachineId,
-            service_month: value,
-            engineer_name: engineerName,
-            note: note,
-            photo_url: photoUrl
-          });
-
+        const { error: eventError } = await supabaseClient.from("service_events").insert({
+          machine_id: currentMachineId,
+          service_month: value,
+          engineer_name: engineerName,
+          note,
+          photo_url: photoUrl
+        });
         if (eventError) throw eventError;
 
-        const customer = customers.find((item) => item.id === currentCustomerId);
-        if (customer) {
-          [...customer.robotics, ...customer.cm].forEach((machine) => {
-            if (machine.id === currentMachineId) {
-              machine.lastService = value;
-              machine.status = "Groen";
-            }
-          });
-        }
-
         const savedName = currentMachineName;
-        currentMachineId = null;
-        currentMachineName = "";
-
         closeServiceModal();
-        renderCustomer(currentCustomerId);
-        renderMarkers(getFilteredCustomers());
-        updateMetrics();
+        await loadData(currentCustomerId);
         showStatus(`Service opgeslagen voor ${savedName}`, "success");
+        setTimeout(hideStatus, 1800);
       } catch (error) {
         console.error(error);
         showStatus(`Opslaan mislukt: ${error.message || "onbekende fout"}`, "error");
@@ -659,109 +621,136 @@
       }
     }
 
-    async function loadData() {
-      showStatus("Data laden...", "info");
-
-      const { data: customerRows, error: customerError } = await supabaseClient
-        .from("customers")
-        .select("id, name, address, postcode, city, country, latitude, longitude")
-        .not("name", "is", null);
-
-      if (customerError) {
-        showStatus("Fout bij laden van customers", "error");
-        console.error(customerError);
-        return;
-      }
-
-      const { data: machineRows, error: machineError } = await supabaseClient
-        .from("machines")
-        .select("id, customer_id, type, machine_name, last_service");
-
-      if (machineError) {
-        showStatus("Fout bij laden van machines", "error");
-        console.error(machineError);
-        return;
-      }
-
-      const grouped = new Map();
-
+    function groupData(customerRows, machineRows, eventRows) {
+      const customerMap = new Map();
       customerRows.forEach((row) => {
-        const nameValue = row.name && row.name.trim() !== "" ? row.name : "(geen naam)";
-        const key = normalizeValue(nameValue);
-
-        if (!grouped.has(key)) {
-          grouped.set(key, {
-            id: row.id,
-            sourceIds: [row.id],
-            name: nameValue,
-            address: row.address || "",
-            postcode: row.postcode || "",
-            city: row.city || "",
-            country: row.country || "",
-            latitude: row.latitude !== null ? Number(row.latitude) : null,
-            longitude: row.longitude !== null ? Number(row.longitude) : null,
-            robotics: [],
-            cm: []
-          });
-        } else {
-          grouped.get(key).sourceIds.push(row.id);
-        }
+        customerMap.set(row.id, {
+          id: row.id,
+          name: row.name || "(geen naam)",
+          address: row.address || "",
+          postcode: row.postcode || "",
+          city: row.city || "",
+          country: row.country || "",
+          latitude: row.latitude !== null ? Number(row.latitude) : null,
+          longitude: row.longitude !== null ? Number(row.longitude) : null,
+          robotics: [],
+          cm: []
+        });
       });
 
-      customers = Array.from(grouped.values());
+      const eventsByMachineId = new Map();
+      eventRows.forEach((event) => {
+        if (!eventsByMachineId.has(event.machine_id)) eventsByMachineId.set(event.machine_id, []);
+        eventsByMachineId.get(event.machine_id).push(event);
+      });
+      eventsByMachineId.forEach((arr) => arr.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)));
 
       machineRows.forEach((row) => {
-        const customer = customers.find((item) => item.sourceIds.includes(row.customer_id));
+        const customer = customerMap.get(row.customer_id);
         if (!customer) return;
-
+        const events = eventsByMachineId.get(row.id) || [];
         const machine = {
           id: row.id,
           name: row.machine_name || "Machine",
           lastService: row.last_service || "---",
-          status: machineStatus(row.last_service || "---"),
-          customerLabel: customer.name
+          status: machineStatus(row.last_service || (events[0] && events[0].service_month) || "---"),
+          latestEvent: events[0] || null,
+          events
         };
-
-        if ((row.type || "").toLowerCase() === "cm") {
-          customer.cm.push(machine);
-        } else {
-          customer.robotics.push(machine);
-        }
+        if ((row.type || "").toLowerCase() === "cm") customer.cm.push(machine);
+        else customer.robotics.push(machine);
       });
 
+      return Array.from(customerMap.values())
+        .filter((c) => c.robotics.length + c.cm.length > 0)
+        .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    }
+
+    async function loadData(preferredCustomerId = null) {
+      showStatus("Data laden...", "info");
+      const [customersResult, machinesResult, eventsResult] = await Promise.all([
+        supabaseClient.from("customers").select("id, name, address, postcode, city, country, latitude, longitude").not("name", "is", null),
+        supabaseClient.from("machines").select("id, customer_id, type, machine_name, last_service"),
+        supabaseClient.from("service_events").select("id, machine_id, service_month, engineer_name, note, created_at, photo_url")
+      ]);
+
+      if (customersResult.error) {
+        showStatus("Fout bij laden van customers", "error");
+        console.error(customersResult.error);
+        return;
+      }
+      if (machinesResult.error) {
+        showStatus("Fout bij laden van machines", "error");
+        console.error(machinesResult.error);
+        return;
+      }
+      if (eventsResult.error) {
+        showStatus("Fout bij laden van service_events", "error");
+        console.error(eventsResult.error);
+        return;
+      }
+
+      customers = groupData(customersResult.data || [], machinesResult.data || [], eventsResult.data || []);
       updateMetrics();
-      const filteredCustomers = getFilteredCustomers();
-      renderMarkers(filteredCustomers);
-      renderCustomerList(filteredCustomers);
+      const filtered = getFilteredCustomers();
+      renderMarkers(filtered);
+      renderCustomerList(filtered);
+      fitMapToCustomers(filtered);
 
       if (customers.length > 0) {
-        renderCustomer(customers[0].id);
+        const activeId = preferredCustomerId && customers.some((c) => c.id === preferredCustomerId)
+          ? preferredCustomerId
+          : customers[0].id;
+        renderCustomer(activeId, false);
         showStatus("Data geladen", "success");
-        setTimeout(hideStatus, 1500);
+        setTimeout(hideStatus, 1200);
       } else {
+        detailName.textContent = "Geen klanten gevonden";
+        detailCity.textContent = "";
+        detailAddress.textContent = "";
+        roboticsList.innerHTML = "";
+        cmList.innerHTML = "";
+        recentEvents.innerHTML = "";
         showStatus("Geen klanten gevonden", "error");
       }
     }
 
     search.addEventListener("input", () => {
-      const filteredCustomers = getFilteredCustomers();
-      renderMarkers(filteredCustomers);
-      renderCustomerList(filteredCustomers);
+      const filtered = getFilteredCustomers();
+      renderMarkers(filtered);
+      renderCustomerList(filtered);
+      fitMapToCustomers(filtered);
+      if (currentCustomerId && filtered.some((c) => c.id === currentCustomerId)) {
+        renderCustomer(currentCustomerId, false);
+      }
     });
 
+    refreshBtn.addEventListener("click", () => loadData(currentCustomerId));
     closeModalTop.addEventListener("click", closeServiceModal);
     saveServiceBtn.addEventListener("click", saveCurrentMachine);
+    openCustomerHistoryBtn.addEventListener("click", openCustomerHistory);
     closeHistoryTop.addEventListener("click", closeHistoryModal);
     closeHistoryBottom.addEventListener("click", closeHistoryModal);
 
-    serviceModal.addEventListener("click", (e) => {
-      if (e.target === serviceModal) closeServiceModal();
+    serviceModal.addEventListener("click", (e) => { if (e.target === serviceModal) closeServiceModal(); });
+    historyModal.addEventListener("click", (e) => { if (e.target === historyModal) closeHistoryModal(); });
+
+    photoInput.addEventListener("change", () => {
+      const file = photoInput.files && photoInput.files[0];
+      if (!file) {
+        photoPreview.classList.add("hidden");
+        photoPreview.src = "";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        photoPreview.src = reader.result;
+        photoPreview.classList.remove("hidden");
+      };
+      reader.readAsDataURL(file);
     });
 
-    historyModal.addEventListener("click", (e) => {
-      if (e.target === historyModal) closeHistoryModal();
-    });
-
+    initMap();
     loadData();
   </script>
 </body>
