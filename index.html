@@ -3,800 +3,1780 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Van den Bos Robotics Service</title>
+  <title>Van den Bos Robotics Service Dashboard</title>
   <meta name="color-scheme" content="dark" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef8ff', 100: '#d9efff', 200: '#bce3ff', 300: '#8ed2ff', 400: '#59b8ff',
+              500: '#2f97ff', 600: '#1978f5', 700: '#155fde', 800: '#184db4', 900: '#1a438d'
+            },
+            status: {
+              red: '#ef5b6b',
+              orange: '#d8a743',
+              green: '#2fbf85'
+            }
+          },
+          boxShadow: {
+            panel: '0 18px 40px rgba(0,0,0,.24)'
+          }
+        }
+      }
+    }
+  </script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
   <style>
-    .leaflet-popup-content-wrapper,
-    .leaflet-popup-tip {
-      background: rgb(15 23 42);
-      color: white;
-      border: 1px solid rgba(255,255,255,.08);
+    html, body { min-height: 100%; }
+    body {
+      background:
+        radial-gradient(circle at top left, rgba(47,151,255,.12), transparent 22%),
+        radial-gradient(circle at top right, rgba(17,24,39,.18), transparent 22%),
+        linear-gradient(180deg, #08111d 0%, #0a1220 50%, #091018 100%);
     }
-    .leaflet-container { background: #020617; }
-    .custom-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148,163,184,.3); border-radius: 9999px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .glass {
+      background: rgba(10, 18, 32, 0.82);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+    .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, .25);
+      border-radius: 999px;
+    }
+    #map { min-height: 420px; }
+    .leaflet-container {
+      background: #d8dde6;
+      border-radius: 28px;
+      font: inherit;
+    }
     .marker-dot {
-      width: 18px;
-      height: 18px;
-      border-radius: 9999px;
-      border: 2px solid rgba(255,255,255,.95);
-      box-shadow: 0 0 0 6px rgba(15,23,42,.45);
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      box-shadow: 0 0 0 4px rgba(255,255,255,.85), 0 8px 18px rgba(0,0,0,.35);
+      border: 2px solid rgba(15, 23, 42, .55);
     }
-  </style>
+    .marker-red { background: #ef5b6b; }
+    .marker-orange { background: #d8a743; }
+    .marker-green { background: #2fbf85; }
+
+    @media (max-width: 900px) {
+      .app-shell, .main-grid, .content-grid, .dashboard-grid { display:block !important; }
+      .desktop-two-col, .two-col, .grid-cols-desktop { grid-template-columns: 1fr !important; }
+      .mobile-stack { display:block !important; }
+      .header-actions { display:flex !important; flex-wrap:wrap !important; gap:10px !important; justify-content:flex-start !important; }
+      .header-actions > * { flex:0 0 auto; }
+      .map-first { order:1 !important; }
+      .detail-second { order:2 !important; }
+      .customers-third { order:3 !important; }
+      .mobile-card-compact { padding: 14px !important; }
+      .machine-card-compact { padding: 14px !important; min-height:auto !important; }
+      .machine-meta-inline { display:flex !important; gap:12px !important; flex-wrap:wrap !important; align-items:center !important; }
+      .machine-meta-inline .last-service { margin-top:0 !important; }
+      dialog .dialog-panel, dialog > div, .service-dialog-panel { width:min(92vw, 520px) !important; max-width:92vw !important; padding:16px !important; }
+      .service-dialog-grid, .customer-dialog-grid { grid-template-columns: 1fr !important; }
+    }
+
+    @media (max-width: 900px) {
+      html, body { overflow-x: hidden !important; width: 100%; max-width: 100%; }
+      body { font-size: 16px; }
+      .mx-auto.max-w-\[1600px\] { max-width: 100% !important; padding: 12px !important; }
+      header.rounded-\[32px\] { padding: 16px !important; border-radius: 24px !important; }
+      header > div.flex { flex-direction: column !important; align-items: stretch !important; gap: 14px !important; }
+      header .text-5xl { font-size: 2.2rem !important; line-height: 1 !important; }
+      header .sm\:text-7xl { font-size: 2.2rem !important; }
+      header .text-3xl { font-size: 1.15rem !important; }
+      header .sm\:text-5xl { font-size: 1.15rem !important; }
+      header .tracking-\[0\.42em\] { letter-spacing: 0.22em !important; }
+      header .shrink-0 { width: 100% !important; }
+      header .flex.shrink-0, .header-actions {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+        gap: 10px !important;
+      }
+      header .flex.shrink-0 > button { width: 100% !important; padding: 12px 10px !important; font-size: 14px !important; }
+      section.mt-6.grid.gap-5.lg\:grid-cols-5 {
+        display: grid !important;
+        grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+        gap: 10px !important;
+      }
+      section.mt-6.grid.gap-5.lg\:grid-cols-5 > button { padding: 14px !important; border-radius: 22px !important; }
+      section.mt-6.grid.gap-5.lg\:grid-cols-5 > button div.text-6xl { font-size: 2.5rem !important; margin-top: 10px !important; }
+      section.mt-6.grid.gap-6.xl\:grid-cols-\[1\.1fr,\.9fr\] { display: flex !important; flex-direction: column !important; gap: 14px !important; }
+      section.mt-6.grid.gap-6.xl\:grid-cols-\[1\.1fr,\.9fr\] > div { width: 100% !important; min-width: 0 !important; }
+      #map { height: 220px !important; }
+      #customerDetail h2 { font-size: 2rem !important; line-height: 1.05 !important; }
+      #customerStatus, #customerMachineCount { font-size: 2.5rem !important; margin-top: 12px !important; }
+      .sm\:grid-cols-2 { grid-template-columns: 1fr !important; }
+      dialog { padding: 0 !important; width: 94vw !important; max-width: 94vw !important; border-radius: 22px !important; }
+      dialog > div { width: 100% !important; max-width: 100% !important; }
+      dialog .px-6 { padding-left: 16px !important; padding-right: 16px !important; }
+      dialog .py-5 { padding-top: 16px !important; padding-bottom: 16px !important; }
+    }
+
+    .machine-meta {
+      display: flex !important;
+      gap: 10px !important;
+      align-items: center !important;
+      flex-wrap: nowrap !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+    .machine-meta > * { min-width: 0; }
+  
+    #authGate {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at top left, rgba(47,151,255,.16), transparent 22%),
+        linear-gradient(180deg, rgba(8,17,29,.98) 0%, rgba(10,18,32,.98) 100%);
+    }
+    #authGate.hidden { display: none; }
+    .auth-card {
+      width: min(100%, 460px);
+      border-radius: 32px;
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      background: rgba(10, 18, 32, 0.92);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 18px 40px rgba(0,0,0,.24);
+      padding: 28px;
+    }
+</style>
 </head>
-<body class="bg-slate-950 text-white">
-  <div class="min-h-screen p-4 md:p-6">
-    <div class="mx-auto max-w-7xl">
-      <header class="mb-6 rounded-[28px] border border-white/10 bg-slate-900 px-6 py-6 shadow-2xl shadow-cyan-950/20 md:px-8 md:py-7">
-        <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div class="flex flex-col gap-3">
-            <div class="text-xs uppercase tracking-[0.45em] text-cyan-300">Service App</div>
-            <div class="flex flex-wrap items-end gap-x-3 gap-y-1 leading-none">
-              <span class="text-4xl font-extrabold tracking-tight text-white md:text-6xl">VAN DEN</span>
-              <span class="text-4xl font-extrabold tracking-tight text-green-500 md:text-6xl">BOS</span>
-            </div>
-            <div class="pl-1 text-2xl font-light tracking-[0.35em] text-slate-300 md:text-4xl">
-              robotics <span class="font-medium tracking-normal text-white">Service</span>
-            </div>
-          </div>
-          <div class="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-100">
-            Productieversie op echte customers, machines en service_events
-          </div>
-        </div>
-      </header>
+<body class="text-slate-100 antialiased">
 
-      <div id="status-bar" class="mb-6 hidden rounded-2xl border px-4 py-3 text-sm"></div>
-
-      <section class="mb-6 grid gap-4 md:grid-cols-4">
-        <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-          <div class="text-sm text-slate-300">Locaties</div>
-          <div id="metric-locaties" class="mt-2 text-3xl font-semibold">0</div>
-        </div>
-        <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-          <div class="text-sm text-slate-300">Machines</div>
-          <div id="metric-machines" class="mt-2 text-3xl font-semibold">0</div>
-        </div>
-        <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-          <div class="text-sm text-slate-300">Rood</div>
-          <div id="metric-rood" class="mt-2 text-3xl font-semibold text-red-400">0</div>
-        </div>
-        <div class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-          <div class="text-sm text-slate-300">Oranje</div>
-          <div id="metric-oranje" class="mt-2 text-3xl font-semibold text-amber-400">0</div>
-        </div>
-      </section>
-
-      <main class="grid gap-6 xl:grid-cols-[1.2fr_0.95fr]">
-        <section class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-          <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 class="text-xl font-semibold">Kaart met echte locaties</h2>
-              <p class="text-sm text-slate-300">1 marker per klant op basis van latitude en longitude uit customers</p>
-            </div>
-            <div class="flex w-full flex-col gap-2 md:w-auto md:flex-row">
-              <input id="search" placeholder="Zoek klant, plaats, machine, serienummer" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-2 text-sm outline-none md:w-80" />
-              <button id="refresh-btn" class="rounded-2xl border border-white/10 bg-slate-800 px-4 py-2 text-sm">Verversen</button>
-            </div>
-          </div>
-
-          <div id="map" class="h-[460px] overflow-hidden rounded-[30px] border border-white/10"></div>
-
-          <div class="mt-4">
-            <div class="mb-2 text-sm text-slate-300">Klantenlijst</div>
-            <div id="customer-list" class="custom-scrollbar max-h-[260px] space-y-2 overflow-auto pr-1"></div>
-          </div>
-        </section>
-
-        <aside class="rounded-3xl border border-white/10 bg-slate-900 p-5">
-          <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Klantdetail</div>
-
-          <h2 id="detail-name" class="mt-2 text-2xl font-semibold">Selecteer een klant</h2>
-          <p id="detail-city" class="mt-1 text-sm text-slate-300"></p>
-          <p id="detail-address" class="mt-1 text-sm text-slate-400"></p>
-
-          <div class="mt-5 grid gap-3 sm:grid-cols-2">
-            <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
-              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Status</div>
-              <div id="detail-status" class="mt-2 text-base font-medium">-</div>
-            </div>
-
-            <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
-              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Machines</div>
-              <div id="detail-count" class="mt-2 text-base font-medium">0</div>
-            </div>
-          </div>
-
-          <div class="mt-5 flex flex-wrap gap-2">
-            <a id="maps-link" href="#" target="_blank" rel="noreferrer" class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">Maps</a>
-            <button id="open-customer-history" class="rounded-2xl border border-white/10 px-4 py-2 text-sm">Volledige historie</button>
-          </div>
-
-          <div class="mt-6 rounded-2xl border border-white/10 bg-slate-800/40 p-4">
-            <div class="mb-2 text-sm font-semibold">Recente service-events</div>
-            <div id="recent-events" class="custom-scrollbar max-h-[220px] space-y-3 overflow-auto"></div>
-          </div>
-
-          <div class="mt-6">
-            <h3 class="mb-3 text-lg font-semibold">Machines</h3>
-            <div id="machine-list" class="space-y-3"></div>
-          </div>
-        </aside>
-      </main>
+  <div id="authGate">
+    <div class="auth-card">
+      <div class="text-[11px] uppercase tracking-[0.42em] text-brand-300/90">Service App</div>
+      <div class="mt-3 text-4xl font-black tracking-tight sm:text-5xl">
+        <span class="text-slate-100">VAN DEN</span>
+        <span class="text-[#34df78]"> BOS</span>
+      </div>
+      <div class="mt-2 text-2xl text-slate-200">robotics Service</div>
+      <div class="mt-6 text-lg font-semibold text-slate-100">Beveiligde toegang</div>
+      <div class="mt-2 text-sm text-slate-400">Voer het wachtwoord in om de service-app te openen.</div>
+      <div class="mt-5">
+        <label class="mb-2 block text-sm text-slate-300">Wachtwoord</label>
+        <input id="loginPasswordInput" type="password" class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-brand-400" placeholder="Wachtwoord" />
+      </div>
+      <div class="mt-4 flex flex-wrap gap-3">
+        <button id="loginSubmitBtn" class="rounded-2xl bg-brand-500 px-4 py-3 font-semibold text-white transition hover:bg-brand-400">Inloggen</button>
+      </div>
+      <div id="loginError" class="mt-4 hidden rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+        Onjuist wachtwoord.
+      </div>
     </div>
   </div>
 
-  <div id="service-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
-    <div class="w-full max-w-lg rounded-3xl border border-white/10 bg-slate-900 p-6">
+  <div class="mx-auto max-w-[1600px] px-5 py-6 sm:px-8">
+    <header class="glass rounded-[32px] px-7 py-6 shadow-panel">
+      <div class="flex items-start justify-between gap-6">
+        <div>
+          <div class="text-[11px] uppercase tracking-[0.42em] text-brand-300/90">Service App</div>
+          <div class="mt-2 leading-none">
+            <div class="text-5xl font-black tracking-tight sm:text-7xl">
+              <span class="text-slate-100">VAN DEN</span>
+              <span class="text-[#34df78]"> BOS</span>
+            </div>
+            <div class="mt-3 flex items-end gap-4 text-slate-200">
+              <span class="text-3xl tracking-[0.42em] sm:text-5xl">robotics</span>
+              <span class="text-3xl font-semibold sm:text-5xl">Service</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
+          <button id="refreshBtnTop" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-100 transition hover:bg-white/10">Verversen</button>          <button id="addCustomerBtn" class="rounded-2xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-400">Klant toevoegen</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="mt-6 grid gap-5 lg:grid-cols-5">
+      <button data-kpi-filter="all" class="kpi-filter glass rounded-[28px] p-5 text-left shadow-panel transition hover:bg-white/[0.06]">
+        <div class="text-sm text-slate-300">Locaties</div>
+        <div id="kpiLocations" class="mt-4 text-6xl font-semibold tracking-tight">0</div>
+      </button>
+      <button data-kpi-filter="all" class="kpi-filter glass rounded-[28px] p-5 text-left shadow-panel transition hover:bg-white/[0.06]">
+        <div class="text-sm text-slate-300">Machines</div>
+        <div id="kpiMachines" class="mt-4 text-6xl font-semibold tracking-tight">0</div>
+      </button>
+      <button data-kpi-filter="red" class="kpi-filter glass rounded-[28px] p-5 text-left shadow-panel transition hover:bg-white/[0.06]">
+        <div class="text-sm text-slate-300">Service vereist</div>
+        <div id="kpiRed" class="mt-4 text-6xl font-semibold tracking-tight text-status-red">0</div>
+      </button>
+      <button data-kpi-filter="orange" class="kpi-filter glass rounded-[28px] p-5 text-left shadow-panel transition hover:bg-white/[0.06]">
+        <div class="text-sm text-slate-300">Service plannen</div>
+        <div id="kpiOrange" class="mt-4 text-6xl font-semibold tracking-tight text-status-orange">0</div>
+      </button>
+      <button data-kpi-filter="green" class="kpi-filter glass rounded-[28px] p-5 text-left shadow-panel transition hover:bg-white/[0.06]">
+        <div class="text-sm text-slate-300">Service OK</div>
+        <div id="kpiGreen" class="mt-4 text-6xl font-semibold tracking-tight text-status-green">0</div>
+      </button>
+    </section>
+
+    <section class="mt-6 grid gap-6 xl:grid-cols-[1.1fr,.9fr]">
+      <div class="glass rounded-[32px] p-5 shadow-panel flex min-h-0 flex-col xl:h-[calc(100vh-250px)]">
+        <div class="mt-4 overflow-hidden rounded-[28px] border border-white/8">
+          <div id="map"></div>
+        </div>
+
+        <div class="mt-4 flex justify-center">
+          <button id="openCustomersBtn" class="rounded-2xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-400">
+            Klanten
+          </button>
+        </div>
+
+        <div id="customerList" class="hidden"></div>
+      </div>
+
+      <div class="glass rounded-[32px] p-5 shadow-panel">
+        <div class="text-xs uppercase tracking-[0.38em] text-brand-300">Klantdetail</div>
+
+        <div id="customerDetail" class="mt-4">
+          <h2 class="text-4xl font-semibold tracking-tight text-slate-100">Selecteer een klant</h2>
+        </div>
+
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">
+          <div class="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+            <div class="text-xs uppercase tracking-[0.34em] text-slate-400">Status</div>
+            <div id="customerStatus" class="mt-5 text-5xl font-semibold tracking-tight text-slate-100">-</div>
+          </div>
+          <div class="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+            <div class="text-xs uppercase tracking-[0.34em] text-slate-400">Machines</div>
+            <div id="customerMachineCount" class="mt-5 text-5xl font-semibold tracking-tight text-slate-100">0</div>
+          </div>
+        </div>
+
+        <div class="mt-5 flex flex-wrap gap-3">
+          <button id="editCustomerBtn" class="rounded-2xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-400">Klant bewerken</button>
+          <button id="googleMapsBtn" class="rounded-2xl bg-cyan-500 px-5 py-3 font-semibold text-slate-950 transition hover:bg-cyan-400">Open in Google Maps</button>
+        </div>
+
+        <div class="mt-7">
+          <button id="openServiceHistoryBtn" class="flex w-full items-center justify-between rounded-[28px] border border-white/8 bg-white/[0.03] p-5 text-left transition hover:bg-white/[0.05]">
+            <h3 class="text-3xl font-semibold tracking-tight">Servicehistorie</h3>
+            <span id="historyCount" class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-300">0</span>
+          </button>
+        </div>
+
+        <div class="mt-7">
+          <button id="openMachinesBtn" class="flex w-full items-center justify-between rounded-[28px] border border-white/8 bg-white/[0.03] p-5 text-left transition hover:bg-white/[0.05]">
+            <h3 class="text-4xl font-semibold tracking-tight">Machines</h3>
+            <span id="machinesTitleCount" class="text-xl text-slate-400">0 machines</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <dialog id="customerDialog" class="w-full max-w-3xl rounded-3xl border border-white/10 bg-slate-950 p-0 text-slate-100 backdrop:bg-black/70">
+    <div class="border-b border-white/10 px-6 py-4">
       <div class="flex items-center justify-between gap-3">
         <div>
-          <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Service</div>
-          <h3 id="modal-title" class="mt-2 text-2xl font-semibold">Service registreren</h3>
+          <h3 id="customerDialogTitle" class="text-lg font-semibold">Klant toevoegen</h3>
+          <div class="mt-1 text-sm text-slate-400">Beheer klantgegevens direct in de app.</div>
         </div>
-        <button id="close-modal-top" class="rounded-xl border border-white/10 px-3 py-2 text-sm">Sluiten</button>
-      </div>
-
-      <div class="mt-5 grid gap-4">
-        <label class="block">
-          <div class="mb-2 text-sm text-slate-300">Monteur</div>
-          <input id="engineer" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none" value="Hoofdmonteur" />
-        </label>
-
-        <label class="block">
-          <div class="mb-2 text-sm text-slate-300">Notitie</div>
-          <textarea id="service-note" rows="4" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none" placeholder="Bijvoorbeeld: onderhoud uitgevoerd"></textarea>
-        </label>
-
-        <label class="block">
-          <div class="mb-2 text-sm text-slate-300">Foto</div>
-          <input type="file" id="photo-input" accept="image/*" class="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-sm outline-none file:mr-4 file:rounded-xl file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-900" />
-        </label>
-
-        <img id="photo-preview" class="hidden max-h-56 rounded-2xl border border-white/10 object-cover" alt="Preview" />
-      </div>
-
-      <div class="mt-5 flex justify-end">
-        <button id="save-service" class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">Opslaan</button>
+        <button id="closeCustomerBtn" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">Sluiten</button>
       </div>
     </div>
-  </div>
+    <div class="space-y-4 px-6 py-5">
+      <div class="grid gap-4 md:grid-cols-2">
+        <div>
+          <label class="mb-1 block text-sm text-slate-300">Naam</label>
+          <input id="customerNameInput" class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-brand-400" placeholder="Klantnaam" />
+        </div>
+        <div>
+          <label class="mb-1 block text-sm text-slate-300">Adres</label>
+          <input id="customerAddressInput" class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-brand-400" placeholder="Straat en huisnummer" />
+        </div>
+        <div>
+          <label class="mb-1 block text-sm text-slate-300">Postcode</label>
+          <input id="customerPostcodeInput" class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-brand-400" placeholder="Postcode" />
+        </div>
+        <div>
+          <label class="mb-1 block text-sm text-slate-300">Plaats</label>
+          <input id="customerCityInput" class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-brand-400" placeholder="Plaats" />
+        </div>
+        <div>
+          <label class="mb-1 block text-sm text-slate-300">Land</label>
+          <input id="customerCountryInput" class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-brand-400" placeholder="Land" value="Nederland" />
+        </div>
+        <div>
+          <label class="mb-1 block text-sm text-slate-300">Notitie</label>
+          <input id="customerNoteInput" class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-brand-400" placeholder="Korte notitie" />
+        </div>
+        <div>
+          <label class="mb-1 block text-sm text-slate-300">Latitude</label>
+          <input id="customerLatitudeInput" type="number" step="any" class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-brand-400" placeholder="52.0907" />
+        </div>
+        <div>
+          <label class="mb-1 block text-sm text-slate-300">Longitude</label>
+          <input id="customerLongitudeInput" type="number" step="any" class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-brand-400" placeholder="5.1214" />
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <button id="saveCustomerBtn" class="rounded-2xl bg-brand-500 px-4 py-3 font-semibold hover:bg-brand-400">Opslaan</button>
+        <button id="cancelCustomerBtn" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-semibold hover:bg-white/10">Annuleren</button>
+      </div>
+      <div id="customerEditActions" class="hidden border-t border-white/10 pt-4">
+        <div class="flex flex-wrap gap-3">
+          <button id="manageMachinesBtn" class="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 font-semibold text-red-100 transition hover:bg-red-500/20">Machines verwijderen</button>
+          <button id="deleteCustomerBtn" class="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 font-semibold text-red-100 transition hover:bg-red-500/20">Klant verwijderen</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
 
-  <div id="history-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
-    <div class="w-full max-w-3xl rounded-3xl border border-white/10 bg-slate-900 p-6">
+  <dialog id="machineDialog" class="w-full max-w-2xl rounded-3xl border border-white/10 bg-slate-950 p-0 text-slate-100 backdrop:bg-black/70">
+    <div class="border-b border-white/10 px-6 py-4">
       <div class="flex items-center justify-between gap-3">
         <div>
-          <div class="text-xs uppercase tracking-[0.3em] text-cyan-300">Historie</div>
-          <h3 id="history-title" class="mt-2 text-2xl font-semibold">Service historie</h3>
+          <h3 id="machineDialogTitle" class="text-lg font-semibold">Machine toevoegen</h3>
+          <div id="machineDialogCustomer" class="mt-1 text-sm text-slate-400">-</div>
         </div>
-        <button id="close-history-top" class="rounded-xl border border-white/10 px-3 py-2 text-sm">Sluiten</button>
-      </div>
-
-      <div id="history-list" class="custom-scrollbar mt-5 max-h-[65vh] space-y-3 overflow-auto"></div>
-
-      <div class="mt-5 flex justify-end">
-        <button id="close-history-bottom" class="rounded-2xl border border-white/10 px-4 py-2 text-sm">Sluiten</button>
+        <button id="closeMachineBtn" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">Sluiten</button>
       </div>
     </div>
-  </div>
+    <div class="space-y-4 px-6 py-5">
+      <div class="grid gap-4 md:grid-cols-2">
+        <div>
+          <label class="mb-1 block text-sm text-slate-300">Machinenaam</label>
+          <input id="machineNameInput" class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-brand-400" placeholder="Bijv. Lasrobot 01" />
+        </div>
+        <div>
+          <label class="mb-1 block text-sm text-slate-300">Type</label>
+          <select id="machineTypeInput" class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-brand-400">
+            <option value="Robotics">Robotics</option>
+            <option value="CM">CM</option>
+          </select>
+        </div>
+        <div>
+          <label class="mb-1 block text-sm text-slate-300">Laatste service (optioneel)</label>
+          <input id="machineLastServiceInput" class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-brand-400" placeholder="04-2026" />
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <button id="saveMachineBtn" class="rounded-2xl bg-brand-500 px-4 py-3 font-semibold hover:bg-brand-400">Opslaan</button>
+        <button id="cancelMachineBtn" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-semibold hover:bg-white/10">Annuleren</button>
+        <button id="deleteMachineBtn" class="hidden rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 font-semibold text-red-100 transition hover:bg-red-500/20">Verwijderen</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="manageMachinesDialog" class="w-full max-w-3xl rounded-3xl border border-white/10 bg-slate-950 p-0 text-slate-100 backdrop:bg-black/70">
+    <div class="border-b border-white/10 px-6 py-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-semibold">Machines verwijderen</h3>
+          <div id="manageMachinesCustomer" class="mt-1 text-sm text-slate-400">-</div>
+        </div>
+        <button id="closeManageMachinesBtn" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">Sluiten</button>
+      </div>
+    </div>
+    <div class="px-6 py-5">
+      <div id="manageMachinesList" class="scrollbar-thin max-h-[60vh] space-y-3 overflow-auto pr-1"></div>
+    </div>
+  </dialog>
+
+  <dialog id="customersDialog" class="w-full max-w-4xl rounded-3xl border border-white/10 bg-slate-950 p-0 text-slate-100 backdrop:bg-black/70">
+    <div class="border-b border-white/10 px-6 py-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h3 id="customersDialogTitle" class="text-lg font-semibold">Klanten</h3>
+          <div id="customersDialogSubtitle" class="mt-1 text-sm text-slate-400">Selecteer een klant uit de lijst.</div>
+        </div>
+        <button id="closeCustomersBtn" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">Sluiten</button>
+      </div>
+    </div>
+    <div class="space-y-4 px-6 py-5">
+      <div id="customersDialogSearchWrap">
+        <input id="customersDialogSearch" class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-brand-400" placeholder="Zoek klant op naam" />
+      </div>
+      <div id="customerListModal" class="scrollbar-thin max-h-[70vh] space-y-4 overflow-auto pr-1"></div>
+    </div>
+  </dialog>
+
+  <dialog id="serviceDialog" class="w-full max-w-xl rounded-3xl border border-white/10 bg-slate-950 p-0 text-slate-100 backdrop:bg-black/70">
+    <div class="border-b border-white/10 px-6 py-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-semibold">Service registreren</h3>
+          <div id="serviceDialogMachine" class="mt-1 text-sm text-slate-400">-</div>
+        </div>
+        <button id="closeServiceBtn" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">Sluiten</button>
+      </div>
+    </div>
+    <div class="space-y-4 px-6 py-5">
+      <div>
+        <label class="mb-1 block text-sm text-slate-300">Servicedatum</label>
+        <input id="serviceMonthInput" class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-brand-400" placeholder="MM-YYYY" />
+        <div class="mt-1 text-xs text-slate-500">Standaard staat de huidige maand ingevuld, maar je kunt hier ook een eerdere servicedatum opslaan.</div>
+      </div>
+      <div>
+        <label class="mb-1 block text-sm text-slate-300">Monteur</label>
+        <input id="serviceEngineerInput" class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-brand-400" placeholder="Naam monteur" />
+      </div>
+      <div>
+        <label class="mb-1 block text-sm text-slate-300">Notitie</label>
+        <textarea id="serviceNoteInput" rows="4" class="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-brand-400" placeholder="Wat is er uitgevoerd?"></textarea>
+      </div>
+      <div>
+        <label class="mb-1 block text-sm text-slate-300">Foto toevoegen</label>
+        <input id="servicePhotoInput" type="file" accept="image/*" class="block w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-slate-300 file:mr-4 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-100" />
+        <div class="mt-2 hidden" id="servicePhotoPreviewWrap">
+          <img id="servicePhotoPreview" alt="Voorbeeld servicefoto" class="max-h-48 rounded-2xl border border-white/10 object-cover" />
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <button id="saveServiceBtn" class="rounded-2xl bg-brand-500 px-4 py-3 font-semibold hover:bg-brand-400">Service opslaan</button>
+        <button id="cancelServiceBtn" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-semibold hover:bg-white/10">Annuleren</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="historyDialog" class="w-full max-w-3xl rounded-3xl border border-white/10 bg-slate-950 p-0 text-slate-100 backdrop:bg-black/70">
+    <div class="border-b border-white/10 px-6 py-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-semibold">Machinehistorie</h3>
+          <div id="historyDialogMachine" class="mt-1 text-sm text-slate-400">-</div>
+        </div>
+        <button id="closeHistoryBtn" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">Sluiten</button>
+      </div>
+    </div>
+    <div id="historyDialogList" class="scrollbar-thin max-h-[70vh] space-y-3 overflow-auto px-6 py-5"></div>
+  </dialog>
+
+  <dialog id="serviceHistoryDialog" class="w-full max-w-3xl rounded-3xl border border-white/10 bg-slate-950 p-0 text-slate-100 backdrop:bg-black/70">
+    <div class="border-b border-white/10 px-6 py-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-semibold">Servicehistorie</h3>
+          <div id="serviceHistoryDialogCustomer" class="mt-1 text-sm text-slate-400">-</div>
+        </div>
+        <button id="closeServiceHistoryBtn" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">Sluiten</button>
+      </div>
+    </div>
+    <div id="serviceHistoryDialogList" class="scrollbar-thin max-h-[70vh] space-y-3 overflow-auto px-6 py-5"></div>
+  </dialog>
+
+  <dialog id="machinesDialog" class="w-full max-w-3xl rounded-3xl border border-white/10 bg-slate-950 p-0 text-slate-100 backdrop:bg-black/70">
+    <div class="border-b border-white/10 px-6 py-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-semibold">Machines</h3>
+          <div id="machinesDialogCustomer" class="mt-1 text-sm text-slate-400">-</div>
+        </div>
+        <button id="closeMachinesBtn" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm">Sluiten</button>
+      </div>
+    </div>
+    <div class="px-6 py-5">
+      <div class="mb-4 flex items-center justify-between gap-4">
+        <button id="addMachineBtnPopup" class="rounded-2xl bg-brand-500 px-4 py-3 font-semibold text-white transition hover:bg-brand-400">Machine toevoegen</button>
+        <button id="manageMachinesBtnPopup" class="rounded-2xl bg-red-500 px-4 py-3 font-semibold text-white transition hover:bg-red-400">Machine verwijderen</button>
+      </div>
+      <div id="machinesDialogList" class="scrollbar-thin max-h-[70vh] space-y-3 overflow-auto"></div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="pointer-events-none fixed bottom-4 right-4 z-50 hidden rounded-2xl border border-white/10 bg-slate-900/95 px-4 py-3 text-sm shadow-panel"></div>
 
   <script>
-    window.__APP_CONFIG__ = window.__APP_CONFIG__ || {
-      supabaseUrl: "https://YOUR_PROJECT.supabase.co",
-      supabaseAnonKey: "YOUR_SUPABASE_ANON_KEY",
-      photoBucket: "service-photos",
-      appTitle: "Van den Bos Robotics Service"
+    const STORAGE_KEY = 'vdb_dashboard_config';
+    const AUTH_KEY = 'vdb_service_auth_ok';
+    const APP_PASSWORD = '7602KS@lmelo';
+    const DEFAULT_TABLES = {
+      customers: 'customers',
+      machines: 'machines',
+      service_events: 'service_events'
     };
-  </script>
 
-  <script>
-    (function () {
-      const config = window.__APP_CONFIG__ || {};
-      const hasValidConfig = config.supabaseUrl && !String(config.supabaseUrl).includes("YOUR_PROJECT") && config.supabaseAnonKey && !String(config.supabaseAnonKey).includes("YOUR_SUPABASE_ANON_KEY");
+    const state = {
+      supabase: null,
+      config: null,
+      customers: [],
+      machines: [],
+      serviceEvents: [],
+      enrichedCustomers: [],
+      selectedCustomerId: null,
+      statusFilter: 'all',
+      search: '',
+      map: null,
+      markersLayer: null,
+      markerIndex: new Map(),
+      selectedMachineId: null,
+      customerDialogMode: 'create',
+      editingCustomerId: null,
+      machineDialogMode: 'create',
+      editingMachineId: null,
+      customersDialogMode: 'all'
+    };
 
-      const state = {
-        customers: [],
-        filteredCustomers: [],
-        selectedCustomerId: null,
-        activeMachineId: null,
-        activeMachineName: "",
-        loading: false,
-        map: null,
-        markersLayer: null,
-        markersByCustomerId: new Map(),
-        customerById: new Map()
+    const el = (id) => document.getElementById(id);
+    const on = (id, event, handler) => {
+      const node = el(id);
+      if (node) node.addEventListener(event, handler);
+      return node;
+    };
+
+    const monthNames = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+
+    function showToast(message) {
+      const toast = el('toast');
+      if (!toast) return;
+      toast.textContent = message;
+      toast.classList.remove('hidden');
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => toast.classList.add('hidden'), 2600);
+    }
+
+    function isAuthenticated() {
+      return localStorage.getItem(AUTH_KEY) === '1';
+    }
+
+    function showAuthGate() {
+      el('authGate')?.classList.remove('hidden');
+      setTimeout(() => el('loginPasswordInput')?.focus(), 60);
+    }
+
+    function hideAuthGate() {
+      el('authGate')?.classList.add('hidden');
+    }
+
+    function doLogin() {
+      const input = el('loginPasswordInput');
+      const error = el('loginError');
+      const value = input?.value || '';
+
+      if (value === APP_PASSWORD) {
+        localStorage.setItem(AUTH_KEY, '1');
+        if (error) error.classList.add('hidden');
+        if (input) input.value = '';
+        hideAuthGate();
+        return true;
+      }
+
+      if (error) error.classList.remove('hidden');
+      return false;
+    }
+
+    function doLogout() {
+      localStorage.removeItem(AUTH_KEY);
+      showAuthGate();
+    }
+
+    function safeClose(dialogId) {
+      const dialog = el(dialogId);
+      if (dialog?.open) dialog.close();
+    }
+
+    function openModal(dialogId) {
+      const dialog = el(dialogId);
+      if (dialog && !dialog.open) dialog.showModal();
+    }
+
+    function wireDialogClose(dialogId, closeBtnId, onClose) {
+      on(closeBtnId, 'click', () => {
+        if (typeof onClose === 'function') onClose();
+        safeClose(dialogId);
+      });
+
+      const dialog = el(dialogId);
+      if (!dialog) return;
+
+      dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) {
+          if (typeof onClose === 'function') onClose();
+          safeClose(dialogId);
+        }
+      });
+
+      dialog.addEventListener('cancel', (e) => {
+        e.preventDefault();
+        if (typeof onClose === 'function') onClose();
+        safeClose(dialogId);
+      });
+    }
+
+    function loadConfig() {
+      const fromWindow = window.APP_CONFIG || {};
+      let stored = {};
+      try { stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch {}
+      return {
+        supabaseUrl: stored.supabaseUrl || fromWindow.supabaseUrl || '',
+        supabaseAnonKey: stored.supabaseAnonKey || fromWindow.supabaseAnonKey || '',
+        ...DEFAULT_TABLES,
+        ...(stored.tables || {}),
+        ...(fromWindow.tables || {})
+      };
+    }
+
+    function saveConfig(config) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        supabaseUrl: config.supabaseUrl,
+        supabaseAnonKey: config.supabaseAnonKey,
+        tables: {
+          customers: config.customers,
+          machines: config.machines,
+          service_events: config.service_events
+        }
+      }));
+    }
+
+    function clearConfig() {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+
+    function downloadConfig(config) {
+      const content =
+`window.APP_CONFIG = {
+  supabaseUrl: '${config.supabaseUrl}',
+  supabaseAnonKey: '${config.supabaseAnonKey}',
+  tables: {
+    customers: '${config.customers}',
+    machines: '${config.machines}',
+    service_events: '${config.service_events}'
+  }
+};
+`;
+      const blob = new Blob([content], { type: 'application/javascript' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'config.js';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function resetCustomerForm() {
+      el('customerNameInput').value = '';
+      el('customerAddressInput').value = '';
+      el('customerPostcodeInput').value = '';
+      el('customerCityInput').value = '';
+      el('customerCountryInput').value = 'Nederland';
+      el('customerNoteInput').value = '';
+      el('customerLatitudeInput').value = '';
+      el('customerLongitudeInput').value = '';
+    }
+
+    function fillCustomerForm(customer) {
+      el('customerNameInput').value = customer?.name || '';
+      el('customerAddressInput').value = customer?.address || '';
+      el('customerPostcodeInput').value = customer?.postcode || '';
+      el('customerCityInput').value = customer?.city || '';
+      el('customerCountryInput').value = customer?.country || 'Nederland';
+      el('customerNoteInput').value = customer?.note || '';
+      el('customerLatitudeInput').value = customer?.latitude ?? '';
+      el('customerLongitudeInput').value = customer?.longitude ?? '';
+    }
+
+    function openCustomerDialog(mode = 'create') {
+      state.customerDialogMode = mode;
+      if (mode === 'edit') {
+        const customer = state.customers.find(c => c.id === state.selectedCustomerId);
+        if (!customer) {
+          showToast('Selecteer eerst een klant');
+          return;
+        }
+        state.editingCustomerId = customer.id;
+        el('customerDialogTitle').textContent = 'Klant bewerken';
+        fillCustomerForm(customer);
+        el('customerEditActions')?.classList.remove('hidden');
+      } else {
+        state.editingCustomerId = null;
+        el('customerDialogTitle').textContent = 'Klant toevoegen';
+        resetCustomerForm();
+        el('customerEditActions')?.classList.add('hidden');
+      }
+      openModal('customerDialog');
+    }
+
+    function closeCustomerDialog() {
+      safeClose('customerDialog');
+    }
+
+    async function saveCustomer() {
+      const name = el('customerNameInput').value.trim();
+      if (!name) throw new Error('Naam is verplicht');
+
+      const payload = {
+        name,
+        address: el('customerAddressInput').value.trim() || null,
+        postcode: el('customerPostcodeInput').value.trim() || null,
+        city: el('customerCityInput').value.trim() || null,
+        country: el('customerCountryInput').value.trim() || null,
+        note: el('customerNoteInput').value.trim() || null,
+        latitude: el('customerLatitudeInput').value === '' ? null : Number(el('customerLatitudeInput').value),
+        longitude: el('customerLongitudeInput').value === '' ? null : Number(el('customerLongitudeInput').value)
       };
 
-      const statusBar = document.getElementById("status-bar");
-      const customerList = document.getElementById("customer-list");
-      const detailName = document.getElementById("detail-name");
-      const detailCity = document.getElementById("detail-city");
-      const detailAddress = document.getElementById("detail-address");
-      const detailStatus = document.getElementById("detail-status");
-      const detailCount = document.getElementById("detail-count");
-      const machineList = document.getElementById("machine-list");
-      const searchInput = document.getElementById("search");
-      const mapsLink = document.getElementById("maps-link");
-      const recentEvents = document.getElementById("recent-events");
-      const openCustomerHistoryBtn = document.getElementById("open-customer-history");
-      const refreshBtn = document.getElementById("refresh-btn");
-      const metricLocaties = document.getElementById("metric-locaties");
-      const metricMachines = document.getElementById("metric-machines");
-      const metricRood = document.getElementById("metric-rood");
-      const metricOranje = document.getElementById("metric-oranje");
-      const serviceModal = document.getElementById("service-modal");
-      const modalTitle = document.getElementById("modal-title");
-      const closeModalTop = document.getElementById("close-modal-top");
-      const saveServiceBtn = document.getElementById("save-service");
-      const engineerInput = document.getElementById("engineer");
-      const noteInput = document.getElementById("service-note");
-      const photoInput = document.getElementById("photo-input");
-      const photoPreview = document.getElementById("photo-preview");
-      const historyModal = document.getElementById("history-modal");
-      const historyTitle = document.getElementById("history-title");
-      const historyList = document.getElementById("history-list");
-      const closeHistoryTop = document.getElementById("close-history-top");
-      const closeHistoryBottom = document.getElementById("close-history-bottom");
+      if (payload.latitude !== null && !Number.isFinite(payload.latitude)) throw new Error('Latitude is ongeldig');
+      if (payload.longitude !== null && !Number.isFinite(payload.longitude)) throw new Error('Longitude is ongeldig');
 
-      if (config.appTitle) {
-        document.title = config.appTitle;
-      }
+      let savedId = state.editingCustomerId;
 
-      function createClient() {
-        if (!hasValidConfig) return null;
-        return window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
-          auth: { persistSession: false, autoRefreshToken: false }
-        });
-      }
-
-      const supabaseClient = createClient();
-
-      function showStatus(message, type = "info", sticky = false) {
-        statusBar.className = "mb-6 rounded-2xl border px-4 py-3 text-sm";
-        statusBar.classList.remove("hidden");
-        if (type === "error") statusBar.classList.add("border-red-500/30", "bg-red-500/10", "text-red-100");
-        else if (type === "success") statusBar.classList.add("border-emerald-500/30", "bg-emerald-500/10", "text-emerald-100");
-        else statusBar.classList.add("border-cyan-500/30", "bg-cyan-500/10", "text-cyan-100");
-        statusBar.textContent = message;
-        if (!sticky) {
-          window.clearTimeout(showStatus._timer);
-          showStatus._timer = window.setTimeout(() => statusBar.classList.add("hidden"), 2400);
-        }
-      }
-
-      function escapeHtml(value) {
-        return String(value ?? "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/\"/g, "&quot;")
-          .replace(/'/g, "&#039;");
-      }
-
-      function safeText(value, fallback = "-") {
-        return value === null || value === undefined || String(value).trim() === "" ? fallback : String(value);
-      }
-
-      function normalizeValue(value) {
-        return String(value || "")
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/ß/g, "ss")
-          .replace(/[^a-z0-9]+/g, " ")
-          .replace(/\s+/g, " ")
-          .trim();
-      }
-
-      function parseServiceMonth(value) {
-        if (!value || /^-+$/.test(String(value).trim())) return null;
-        const parsed = new Date(value);
-        if (!Number.isNaN(parsed.getTime())) return new Date(parsed.getFullYear(), parsed.getMonth(), 1);
-        const match = String(value).trim().match(/^(\d{1,2})[-/](\d{4})$/);
-        if (!match) return null;
-        return new Date(Number(match[2]), Number(match[1]) - 1, 1);
-      }
-
-      function monthDiff(start, end) {
-        if (!start || !end) return 999;
-        return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-      }
-
-      function machineStatus(lastService) {
-        const parsed = parseServiceMonth(lastService);
-        if (!parsed) return "Rood";
-        const months = monthDiff(parsed, new Date());
-        if (months >= 12) return "Rood";
-        if (months >= 9) return "Oranje";
-        return "Groen";
-      }
-
-      function statusPill(status) {
-        const cls = status === "Rood"
-          ? "bg-red-500/20 text-red-100"
-          : status === "Oranje"
-          ? "bg-amber-500/20 text-amber-100"
-          : "bg-emerald-500/20 text-emerald-100";
-        return `<span class="rounded-full px-3 py-1 text-xs font-semibold ${cls}">${escapeHtml(status)}</span>`;
-      }
-
-      function markerColor(status) {
-        if (status === "Rood") return "#ef4444";
-        if (status === "Oranje") return "#f59e0b";
-        return "#22c55e";
-      }
-
-      function formatDateTime(value) {
-        if (!value) return "-";
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) return String(value);
-        return new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium", timeStyle: "short" }).format(date);
-      }
-
-      function buildAddress(customer) {
-        const line1 = safeText(customer.address, "").trim();
-        const line2 = [safeText(customer.postcode, "").trim(), safeText(customer.city, "").trim()].filter(Boolean).join(" ");
-        const country = safeText(customer.country, "").trim();
-        return [line1, line2, country].filter(Boolean).join(", ");
-      }
-
-      function buildMapsQuery(customer) {
-        return [safeText(customer.name, "").trim(), buildAddress(customer)].filter(Boolean).join(", ");
-      }
-
-      function getCustomerStatus(customer) {
-        const machines = customer.machines || [];
-        if (!machines.length) return "Groen";
-        if (machines.some((machine) => machine.status === "Rood")) return "Rood";
-        if (machines.some((machine) => machine.status === "Oranje")) return "Oranje";
-        return "Groen";
-      }
-
-      function getFilteredCustomers() {
-        const query = normalizeValue(searchInput.value);
-        if (!query) return [...state.customers];
-        return state.customers.filter((customer) => {
-          const customerText = [
-            customer.name,
-            customer.address,
-            customer.postcode,
-            customer.city,
-            customer.country,
-            ...(customer.machines || []).flatMap((machine) => [machine.machine_name, machine.type, machine.serial_number])
-          ].filter(Boolean).map(normalizeValue).join(" ");
-          return customerText.includes(query);
-        });
-      }
-
-      function updateMetrics() {
-        let machineCount = 0;
-        let redCount = 0;
-        let amberCount = 0;
-        state.customers.forEach((customer) => {
-          (customer.machines || []).forEach((machine) => {
-            machineCount += 1;
-            if (machine.status === "Rood") redCount += 1;
-            if (machine.status === "Oranje") amberCount += 1;
-          });
-        });
-        metricLocaties.textContent = String(state.customers.length);
-        metricMachines.textContent = String(machineCount);
-        metricRood.textContent = String(redCount);
-        metricOranje.textContent = String(amberCount);
-      }
-
-      function renderCustomerList() {
-        customerList.innerHTML = "";
-        if (!state.filteredCustomers.length) {
-          customerList.innerHTML = `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen klanten gevonden</div>`;
-          return;
-        }
-        state.filteredCustomers
-          .slice()
-          .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "nl"))
-          .forEach((customer) => {
-            const isActive = customer.id === state.selectedCustomerId;
-            const button = document.createElement("button");
-            button.className = `w-full rounded-2xl border p-3 text-left transition ${isActive ? "border-cyan-400 bg-slate-800" : "border-white/10 bg-slate-800/60 hover:bg-slate-800"}`;
-            button.innerHTML = `
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <div class="font-medium">${escapeHtml(safeText(customer.name, "(geen naam)"))}</div>
-                  <div class="mt-1 text-sm text-slate-400">${escapeHtml(buildAddress(customer) || safeText(customer.city, ""))}</div>
-                </div>
-                <div class="shrink-0">${statusPill(getCustomerStatus(customer))}</div>
-              </div>
-            `;
-            button.addEventListener("click", () => selectCustomer(customer.id, true));
-            customerList.appendChild(button);
-          });
-      }
-
-      function machineCard(machine) {
-        return `
-          <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <div class="font-medium">${escapeHtml(safeText(machine.machine_name, "Machine"))}</div>
-                <div class="mt-1 text-sm text-slate-300">Type: ${escapeHtml(safeText(machine.type))}</div>
-                <div class="mt-1 text-sm text-slate-300">Laatste service: ${escapeHtml(safeText(machine.last_service, "---"))}</div>
-                ${machine.serial_number ? `<div class="mt-1 text-xs text-slate-400">Serienummer: ${escapeHtml(machine.serial_number)}</div>` : ""}
-              </div>
-              ${statusPill(machine.status)}
-            </div>
-
-            <div class="mt-4 flex flex-wrap gap-2">
-              <button class="service-btn rounded-xl border border-white/10 px-3 py-2 text-sm" data-id="${machine.id}" data-name="${escapeHtml(safeText(machine.machine_name, "Machine"))}">Service</button>
-              <button class="history-btn rounded-xl border border-white/10 px-3 py-2 text-sm" data-id="${machine.id}" data-name="${escapeHtml(safeText(machine.machine_name, "Machine"))}">Historie</button>
-            </div>
-          </div>
-        `;
-      }
-
-      function historyCard(event) {
-        const note = safeText(event.note);
-        const engineer = safeText(event.engineer_name);
-        const serviceMonth = safeText(event.service_month);
-        const photo = event.photo_url
-          ? `<a href="${encodeURI(event.photo_url)}" target="_blank" rel="noreferrer" class="mt-3 inline-block"><img src="${encodeURI(event.photo_url)}" alt="Service foto" class="max-h-56 rounded-2xl border border-white/10 object-cover" /></a>`
-          : "";
-        return `
-          <div class="rounded-2xl border border-white/10 bg-slate-800/80 p-4">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div class="font-medium">${escapeHtml(serviceMonth)}</div>
-              <div class="text-xs text-slate-400">${escapeHtml(formatDateTime(event.created_at))}</div>
-            </div>
-            <div class="mt-2 text-sm text-slate-300">Monteur: ${escapeHtml(engineer)}</div>
-            <div class="mt-2 text-sm text-slate-300">Notitie: ${escapeHtml(note)}</div>
-            ${photo}
-          </div>
-        `;
-      }
-
-      function renderRecentEvents(customer) {
-        const items = (customer.recentEvents || []).slice(0, 8);
-        if (!items.length) {
-          recentEvents.innerHTML = `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Nog geen service-events</div>`;
-          return;
-        }
-        recentEvents.innerHTML = items.map((event) => `
-          <div class="rounded-2xl border border-white/10 bg-slate-800/70 p-3">
-            <div class="flex items-start justify-between gap-3">
-              <div>
-                <div class="font-medium">${escapeHtml(safeText(event.machine_name, "Machine"))}</div>
-                <div class="mt-1 text-xs text-slate-400">${escapeHtml(safeText(event.service_month))}</div>
-              </div>
-              <div class="text-xs text-slate-400">${escapeHtml(formatDateTime(event.created_at))}</div>
-            </div>
-            <div class="mt-2 text-sm text-slate-300">${escapeHtml(safeText(event.note, "Geen notitie"))}</div>
-          </div>
-        `).join("");
-      }
-
-      function renderCustomerDetails(customerId) {
-        const customer = state.customerById.get(customerId);
-        if (!customer) return;
-        state.selectedCustomerId = customerId;
-        detailName.textContent = safeText(customer.name, "(geen naam)");
-        detailCity.textContent = safeText(customer.city, "");
-        detailAddress.textContent = buildAddress(customer);
-        detailStatus.textContent = getCustomerStatus(customer);
-        detailCount.textContent = String((customer.machines || []).length);
-        mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(buildMapsQuery(customer))}`;
-        machineList.innerHTML = customer.machines.length
-          ? customer.machines.map((machine) => machineCard(machine)).join("")
-          : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Geen machines gekoppeld</div>`;
-        renderRecentEvents(customer);
-        renderCustomerList();
-      }
-
-      function makeMarker(customer) {
-        const status = getCustomerStatus(customer);
-        const dot = document.createElement("div");
-        dot.className = "marker-dot";
-        dot.style.background = markerColor(status);
-        return L.marker([customer.latitude, customer.longitude], {
-          icon: L.divIcon({ className: "", html: dot.outerHTML, iconSize: [18, 18], iconAnchor: [9, 9] })
-        });
-      }
-
-      function renderMarkers() {
-        state.markersLayer.clearLayers();
-        state.markersByCustomerId.clear();
-        const bounds = [];
-        state.filteredCustomers.forEach((customer) => {
-          if (typeof customer.latitude !== "number" || typeof customer.longitude !== "number" || Number.isNaN(customer.latitude) || Number.isNaN(customer.longitude)) return;
-          const marker = makeMarker(customer);
-          marker.bindPopup(`
-            <div class="min-w-[200px]">
-              <div style="font-weight:700; margin-bottom:4px;">${escapeHtml(safeText(customer.name, "(geen naam)"))}</div>
-              <div style="font-size:12px; opacity:.8;">${escapeHtml(buildAddress(customer) || safeText(customer.city, ""))}</div>
-              <div style="margin-top:8px; font-size:12px;">${customer.machines.length} machines · ${escapeHtml(getCustomerStatus(customer))}</div>
-            </div>
-          `);
-          marker.on("click", () => selectCustomer(customer.id, false));
-          marker.addTo(state.markersLayer);
-          state.markersByCustomerId.set(customer.id, marker);
-          bounds.push([customer.latitude, customer.longitude]);
-        });
-        if (bounds.length) {
-          state.map.fitBounds(bounds, { padding: [30, 30] });
-        }
-      }
-
-      function openServiceModal(machineId, machineName) {
-        state.activeMachineId = machineId;
-        state.activeMachineName = machineName;
-        modalTitle.textContent = `Service registreren - ${machineName}`;
-        serviceModal.classList.remove("hidden");
-        serviceModal.classList.add("flex");
-      }
-
-      function closeServiceModal() {
-        serviceModal.classList.add("hidden");
-        serviceModal.classList.remove("flex");
-        engineerInput.value = "Hoofdmonteur";
-        noteInput.value = "";
-        photoInput.value = "";
-        photoPreview.src = "";
-        photoPreview.classList.add("hidden");
-      }
-
-      function openHistoryModal(title, items) {
-        historyTitle.textContent = title;
-        historyList.innerHTML = items.length
-          ? items.map((item) => historyCard(item)).join("")
-          : `<div class="rounded-2xl border border-dashed border-white/10 bg-slate-800/40 p-4 text-sm text-slate-300">Nog geen service historie</div>`;
-        historyModal.classList.remove("hidden");
-        historyModal.classList.add("flex");
-      }
-
-      function closeHistoryModal() {
-        historyModal.classList.add("hidden");
-        historyModal.classList.remove("flex");
-        historyList.innerHTML = "";
-      }
-
-      function buildPublicUrl(path) {
-        if (!path) return null;
-        const { data } = supabaseClient.storage.from(config.photoBucket).getPublicUrl(path);
-        return data?.publicUrl || null;
-      }
-
-      async function uploadPhoto(file, customerId, machineId) {
-        const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-        const filePath = `customers/${customerId}/machines/${machineId}/${Date.now()}-${cleanName}`;
-        const { error } = await supabaseClient.storage.from(config.photoBucket).upload(filePath, file, { upsert: false, cacheControl: "3600" });
+      if (state.customerDialogMode === 'edit' && state.editingCustomerId) {
+        const { error } = await state.supabase.from(state.config.customers).update(payload).eq('id', state.editingCustomerId);
         if (error) throw error;
-        return buildPublicUrl(filePath);
+      } else {
+        const { data, error } = await state.supabase.from(state.config.customers).insert(payload).select('id').single();
+        if (error) throw error;
+        savedId = data?.id || null;
       }
 
-      async function loadData() {
-        if (!supabaseClient) {
-          showStatus("Vul eerst window.__APP_CONFIG__ in met je Supabase URL en anon key.", "error", true);
+      closeCustomerDialog();
+      await loadData(true);
+      if (savedId) selectCustomer(savedId);
+      showToast(state.customerDialogMode === 'edit' ? 'Klant bijgewerkt' : 'Klant toegevoegd');
+    }
+
+    function resetMachineForm() {
+      el('machineNameInput').value = '';
+      if (el('machineTypeInput')) el('machineTypeInput').value = 'Robotics';
+      el('machineLastServiceInput').value = '';
+    }
+
+    function fillMachineForm(machine) {
+      el('machineNameInput').value = machine?.machine_name || '';
+      if (el('machineTypeInput')) el('machineTypeInput').value = machine?.type || 'Robotics';
+      el('machineLastServiceInput').value = machine?.last_service || '';
+    }
+
+    function openMachineDialog() {
+      const customer = state.customers.find(c => c.id === state.selectedCustomerId);
+      if (!customer) {
+        showToast('Selecteer eerst een klant');
+        return;
+      }
+
+      state.machineDialogMode = 'create';
+      state.editingMachineId = null;
+      el('machineDialogTitle').textContent = 'Machine toevoegen';
+      el('machineDialogCustomer').textContent = customer.name || '-';
+      resetMachineForm();
+      el('deleteMachineBtn')?.classList.add('hidden');
+      openModal('machineDialog');
+    }
+
+    function openMachineEditDialog(machineId) {
+      const customer = state.customers.find(c => c.id === state.selectedCustomerId);
+      const machine = state.machines.find(m => m.id === machineId);
+      if (!customer || !machine) {
+        showToast('Machine niet gevonden');
+        return;
+      }
+
+      state.machineDialogMode = 'edit';
+      state.editingMachineId = machine.id;
+      el('machineDialogTitle').textContent = 'Machine bewerken';
+      el('machineDialogCustomer').textContent = customer.name || '-';
+      fillMachineForm(machine);
+      el('deleteMachineBtn')?.classList.remove('hidden');
+      openModal('machineDialog');
+    }
+
+    function closeMachineDialog() {
+      state.machineDialogMode = 'create';
+      state.editingMachineId = null;
+      el('deleteMachineBtn')?.classList.add('hidden');
+      safeClose('machineDialog');
+    }
+
+    function isValidServiceMonthFormat(value) {
+      if (!value) return true;
+      return /^\d{2}-\d{4}$/.test(value.trim());
+    }
+
+    async function saveMachine() {
+      const customerId = state.selectedCustomerId;
+      if (!customerId) throw new Error('Selecteer eerst een klant');
+
+      const machineName = el('machineNameInput').value.trim();
+      if (!machineName) throw new Error('Machinenaam is verplicht');
+
+      const type = el('machineTypeInput').value;
+      const lastService = el('machineLastServiceInput').value.trim();
+      if (!isValidServiceMonthFormat(lastService)) {
+        throw new Error('Laatste service moet in formaat MM-YYYY');
+      }
+
+      const payload = {
+        customer_id: customerId,
+        machine_name: machineName,
+        type: type || null,
+        last_service: lastService || null
+      };
+
+      if (state.machineDialogMode === 'edit' && state.editingMachineId) {
+        const { error } = await state.supabase.from(state.config.machines).update(payload).eq('id', state.editingMachineId);
+        if (error) throw error;
+      } else {
+        const { error } = await state.supabase.from(state.config.machines).insert(payload);
+        if (error) throw error;
+      }
+
+      closeMachineDialog();
+      await loadData();
+      selectCustomer(customerId);
+      showToast(state.machineDialogMode === 'edit' ? 'Machine bijgewerkt' : 'Machine toegevoegd');
+    }
+
+    async function deleteMachineAndHistory(machineId) {
+      const { error: eventsError } = await state.supabase.from(state.config.service_events).delete().eq('machine_id', machineId);
+      if (eventsError) throw eventsError;
+
+      const { error: machineError } = await state.supabase.from(state.config.machines).delete().eq('id', machineId);
+      if (machineError) throw machineError;
+    }
+
+    async function deleteSelectedMachine() {
+      if (!state.editingMachineId) return;
+
+      const machine = state.machines.find(m => m.id === state.editingMachineId);
+      const label = machine?.machine_name || 'deze machine';
+      const ok = window.confirm(`Weet je zeker dat je ${label} wilt verwijderen? Dit verwijdert ook de gekoppelde servicehistorie.`);
+      if (!ok) return;
+
+      await deleteMachineAndHistory(state.editingMachineId);
+      closeMachineDialog();
+      await loadData();
+      if (state.selectedCustomerId) selectCustomer(state.selectedCustomerId);
+      showToast('Machine verwijderd');
+    }
+
+    function closeManageMachinesDialog() {
+      safeClose('manageMachinesDialog');
+    }
+
+    function openManageMachinesDialog() {
+      const customer = state.enrichedCustomers.find(c => c.id === state.selectedCustomerId);
+      if (!customer) {
+        showToast('Selecteer eerst een klant');
+        return;
+      }
+
+      el('manageMachinesCustomer').textContent = customer.name || '-';
+      const container = el('manageMachinesList');
+
+      if (!customer.machines.length) {
+        container.innerHTML = `<div class="rounded-[22px] border border-white/8 bg-white/[0.03] p-5 text-slate-400">Geen machines om te verwijderen.</div>`;
+      } else {
+        container.innerHTML = customer.machines.map(machine => `
+          <div class="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+            <div class="flex items-center justify-between gap-4">
+              <div class="min-w-0">
+                <div class="truncate text-xl font-semibold text-slate-100">${machine.machine_name || 'Onbekende machine'}</div>
+                <div class="mt-1 text-sm text-slate-400">${machine.type || '—'}${machine.latestEvent?.service_month || machine.last_service ? ` · Laatste service: ${formatServiceMonth(machine.latestEvent?.service_month || machine.last_service)}` : ''}</div>
+              </div>
+              <button data-manage-machine-delete="${machine.id}" class="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-2 font-semibold text-red-100 transition hover:bg-red-500/20">Verwijderen</button>
+            </div>
+          </div>
+        `).join('');
+
+        container.querySelectorAll('[data-manage-machine-delete]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const machineId = btn.dataset.manageMachineDelete;
+            const machine = state.machines.find(m => m.id === machineId);
+            const label = machine?.machine_name || 'deze machine';
+            if (!window.confirm(`Weet je zeker dat je ${label} wilt verwijderen? De gekoppelde servicehistorie wordt ook verwijderd.`)) return;
+
+            try {
+              await deleteMachineAndHistory(machineId);
+              await loadData();
+              closeManageMachinesDialog();
+              if (state.selectedCustomerId) selectCustomer(state.selectedCustomerId);
+              showToast('Machine verwijderd');
+            } catch (error) {
+              console.error(error);
+              showToast(error.message || 'Verwijderen mislukt');
+            }
+          });
+        });
+      }
+
+      openModal('manageMachinesDialog');
+    }
+
+    async function deleteSelectedCustomer() {
+      const customer = state.customers.find(c => c.id === state.selectedCustomerId);
+      if (!customer) {
+        showToast('Selecteer eerst een klant');
+        return;
+      }
+
+      const linkedMachines = state.machines.filter(m => m.customer_id === customer.id);
+      if (linkedMachines.length) {
+        showToast('Verwijder eerst alle machines van deze klant');
+        return;
+      }
+
+      if (!window.confirm(`Weet je zeker dat je ${customer.name || 'deze klant'} wilt verwijderen?`)) return;
+
+      const { error } = await state.supabase.from(state.config.customers).delete().eq('id', customer.id);
+      if (error) throw error;
+
+      state.selectedCustomerId = null;
+      closeCustomerDialog();
+      await loadData();
+      showToast('Klant verwijderd');
+    }
+
+    function parseServiceMonth(value) {
+      if (!value || typeof value !== 'string') return null;
+      const match = value.trim().match(/^(\d{2})-(\d{4})$/);
+      if (!match) return null;
+
+      const month = Number(match[1]);
+      const year = Number(match[2]);
+      if (month < 1 || month > 12) return null;
+
+      return { month, year };
+    }
+
+    function monthsDiffFromNow(serviceMonth) {
+      if (!serviceMonth) return Infinity;
+      const now = new Date();
+      const nowMonths = now.getFullYear() * 12 + now.getMonth();
+      const serviceMonths = serviceMonth.year * 12 + (serviceMonth.month - 1);
+      return nowMonths - serviceMonths;
+    }
+
+    function getStatusFromServiceMonth(serviceMonth) {
+      const diff = monthsDiffFromNow(parseServiceMonth(serviceMonth));
+      if (!Number.isFinite(diff) || diff < 0) return 'green';
+      if (diff <= 7) return 'green';
+      if (diff <= 11) return 'orange';
+      return 'red';
+    }
+
+    function statusMeta(status) {
+      return {
+        red: {
+          label: 'Service vereist',
+          text: 'text-status-red',
+          pill: 'border-status-red/30 bg-status-red/10 text-rose-100',
+          marker: 'marker-red'
+        },
+        orange: {
+          label: 'Service plannen',
+          text: 'text-status-orange',
+          pill: 'border-status-orange/30 bg-status-orange/10 text-amber-100',
+          marker: 'marker-orange'
+        },
+        green: {
+          label: 'Service OK',
+          text: 'text-status-green',
+          pill: 'border-status-green/30 bg-status-green/10 text-emerald-100',
+          marker: 'marker-green'
+        }
+      }[status] || {
+        label: '-',
+        text: 'text-slate-200',
+        pill: 'border-white/10 bg-white/5 text-slate-200',
+        marker: 'marker-green'
+      };
+    }
+
+    function formatAddress(customer) {
+      return [customer.address, [customer.postcode, customer.city].filter(Boolean).join(' '), customer.country]
+        .filter(Boolean)
+        .join(', ');
+    }
+
+    function formatServiceMonth(value) {
+      const parsed = parseServiceMonth(value);
+      if (!parsed) return '—';
+      return `${monthNames[parsed.month - 1]} ${parsed.year}`;
+    }
+
+    function formatDate(value) {
+      if (!value) return '—';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    function getCurrentServiceMonth() {
+      const now = new Date();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = now.getFullYear();
+      return `${month}-${year}`;
+    }
+
+    function normalizeServiceMonthInput(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return getCurrentServiceMonth();
+
+      const match = raw.match(/^(\d{1,2})-(\d{4})$/);
+      if (!match) throw new Error('Servicedatum moet in formaat MM-YYYY');
+
+      const month = Number(match[1]);
+      const year = Number(match[2]);
+
+      if (month < 1 || month > 12) throw new Error('Gebruik een geldige maand tussen 01 en 12');
+
+      return `${String(month).padStart(2, '0')}-${year}`;
+    }
+
+    function readFileAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error('Bestand lezen mislukt'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Afbeelding laden mislukt'));
+        img.src = src;
+      });
+    }
+
+    async function preparePhotoValue(file) {
+      if (!file) return null;
+      const rawDataUrl = await readFileAsDataUrl(file);
+      const img = await loadImage(rawDataUrl);
+
+      const maxWidth = 1600;
+      const scale = Math.min(1, maxWidth / (img.width || maxWidth));
+      const width = Math.max(1, Math.round((img.width || maxWidth) * scale));
+      const height = Math.max(1, Math.round((img.height || maxWidth) * scale));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      return canvas.toDataURL('image/jpeg', 0.82);
+    }
+
+    function resetServicePhotoUi() {
+      const input = el('servicePhotoInput');
+      const wrap = el('servicePhotoPreviewWrap');
+      const preview = el('servicePhotoPreview');
+      if (input) input.value = '';
+      if (preview) preview.src = '';
+      if (wrap) wrap.classList.add('hidden');
+    }
+
+    async function updateServicePhotoPreview() {
+      const input = el('servicePhotoInput');
+      const file = input?.files?.[0];
+      const wrap = el('servicePhotoPreviewWrap');
+      const preview = el('servicePhotoPreview');
+
+      if (!file) {
+        if (preview) preview.src = '';
+        if (wrap) wrap.classList.add('hidden');
+        return;
+      }
+
+      const dataUrl = await readFileAsDataUrl(file);
+      preview.src = dataUrl;
+      wrap.classList.remove('hidden');
+    }
+
+    function getMachineEvents(machineId) {
+      return state.serviceEvents
+        .filter(e => e.machine_id === machineId)
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    }
+
+    function latestEventForMachine(machineId) {
+      return getMachineEvents(machineId)[0] || null;
+    }
+
+    function enrichData() {
+      const machinesByCustomer = new Map();
+
+      state.machines.forEach(machine => {
+        const list = machinesByCustomer.get(machine.customer_id) || [];
+        const latestEvent = latestEventForMachine(machine.id);
+        const status = getStatusFromServiceMonth(latestEvent?.service_month || machine.last_service);
+
+        list.push({
+          ...machine,
+          latestEvent,
+          derivedStatus: status
+        });
+
+        machinesByCustomer.set(machine.customer_id, list);
+      });
+
+      const eventsByMachine = new Map();
+      state.serviceEvents.forEach(event => {
+        const list = eventsByMachine.get(event.machine_id) || [];
+        list.push(event);
+        eventsByMachine.set(event.machine_id, list);
+      });
+
+      state.enrichedCustomers = state.customers.map(customer => {
+        const machines = (machinesByCustomer.get(customer.id) || []).sort((a, b) => {
+          const order = { red: 0, orange: 1, green: 2 };
+          return order[a.derivedStatus] - order[b.derivedStatus] || (a.machine_name || '').localeCompare(b.machine_name || '');
+        });
+
+        let customerStatus = 'green';
+        if (machines.some(m => m.derivedStatus === 'red')) customerStatus = 'red';
+        else if (machines.some(m => m.derivedStatus === 'orange')) customerStatus = 'orange';
+
+        const history = machines
+          .flatMap(m => (eventsByMachine.get(m.id) || []).map(ev => ({ ...ev, machine_name: m.machine_name, type: m.type })))
+          .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+        return {
+          ...customer,
+          machines,
+          history,
+          derivedStatus: customerStatus,
+          machineCount: machines.length,
+          searchText: `${customer.name || ''} ${customer.city || ''} ${customer.country || ''} ${customer.address || ''} ${machines.map(m => `${m.machine_name || ''} ${m.type || ''}`).join(' ')}`
+            .toLowerCase()
+        };
+      }).sort((a, b) => {
+        const order = { red: 0, orange: 1, green: 2 };
+        return order[a.derivedStatus] - order[b.derivedStatus] || (a.name || '').localeCompare(b.name || '');
+      });
+    }
+
+    function getVisibleCustomers() {
+      const q = state.search.trim().toLowerCase();
+      return state.enrichedCustomers.filter(customer => {
+        const statusOk = state.statusFilter === 'all' || customer.derivedStatus === state.statusFilter;
+        const searchOk = !q || customer.searchText.includes(q);
+        return statusOk && searchOk;
+      });
+    }
+
+    function clearCustomerSearch() {
+      state.search = '';
+      if (el('customersDialogSearch')) el('customersDialogSearch').value = '';
+    }
+
+    function configureCustomersDialog(mode = 'all') {
+      state.customersDialogMode = mode;
+
+      const title = el('customersDialogTitle');
+      const subtitle = el('customersDialogSubtitle');
+      const searchWrap = el('customersDialogSearchWrap');
+
+      if (mode === 'red_only') {
+        if (title) title.textContent = 'Service vereist';
+        if (subtitle) subtitle.textContent = 'Hier staan alleen klanten die direct service nodig hebben.';
+        if (searchWrap) searchWrap.classList.add('hidden');
+        clearCustomerSearch();
+        return;
+      }
+
+      if (mode === 'orange_only') {
+        if (title) title.textContent = 'Service plannen';
+        if (subtitle) subtitle.textContent = 'Hier staan klanten die binnenkort service nodig hebben.';
+        if (searchWrap) searchWrap.classList.add('hidden');
+        clearCustomerSearch();
+        return;
+      }
+
+      if (title) title.textContent = 'Klanten';
+      if (subtitle) subtitle.textContent = 'Selecteer een klant uit de lijst.';
+      if (searchWrap) searchWrap.classList.remove('hidden');
+    }
+
+    function openCustomersOverview(filterValue = 'all', mode = 'all') {
+      configureCustomersDialog(mode);
+      applyStatusFilter(filterValue);
+      clearCustomerSearch();
+      renderCustomerList();
+      renderMap();
+      openModal('customersDialog');
+      if (mode !== 'red_only') el('customersDialogSearch')?.focus();
+    }
+
+    function showMapForFilter(filterValue = 'all') {
+      applyStatusFilter(filterValue);
+      clearCustomerSearch();
+      renderCustomerList();
+      renderMap();
+      safeClose('customersDialog');
+    }
+
+    function applyStatusFilter(filterValue) {
+      state.statusFilter = filterValue;
+
+      document.querySelectorAll('.kpi-filter').forEach(card => {
+        const active = card.dataset.kpiFilter === filterValue || (filterValue === 'all' && card.dataset.kpiFilter === 'all');
+        card.classList.toggle('ring-2', active);
+        card.classList.toggle('ring-white/15', active);
+        card.classList.toggle('bg-white/[0.06]', active);
+      });
+
+      renderCustomerList();
+      renderMap();
+    }
+
+    function renderKpis() {
+      const customers = state.enrichedCustomers;
+      el('kpiLocations').textContent = customers.length;
+      el('kpiMachines').textContent = state.machines.length;
+      el('kpiRed').textContent = customers.filter(c => c.derivedStatus === 'red').length;
+      el('kpiOrange').textContent = customers.filter(c => c.derivedStatus === 'orange').length;
+      el('kpiGreen').textContent = customers.filter(c => c.derivedStatus === 'green').length;
+    }
+
+    function renderCustomerList() {
+      const customers = getVisibleCustomers().slice().sort((a, b) => {
+        const q = state.search.trim().toLowerCase();
+        const aName = (a.name || '').toLowerCase();
+        const bName = (b.name || '').toLowerCase();
+
+        if (q) {
+          const aStarts = aName.startsWith(q) ? 0 : 1;
+          const bStarts = bName.startsWith(q) ? 0 : 1;
+          if (aStarts !== bStarts) return aStarts - bStarts;
+
+          const aIndex = aName.indexOf(q);
+          const bIndex = bName.indexOf(q);
+          if (aIndex !== bIndex) return aIndex - bIndex;
+        }
+
+        if (a.id === state.selectedCustomerId) return -1;
+        if (b.id === state.selectedCustomerId) return 1;
+        return 0;
+      });
+
+      const cardHtml = !customers.length
+        ? `<div class="rounded-[26px] border border-white/8 bg-white/[0.03] p-6 text-slate-400">Geen klanten gevonden.</div>`
+        : customers.map(customer => {
+            const meta = statusMeta(customer.derivedStatus);
+            const active = customer.id === state.selectedCustomerId;
+
+            return `
+              <button type="button" data-customer-id="${customer.id}" class="customer-card block w-full rounded-[26px] border p-6 text-left transition ${active ? 'border-cyan-400/55 bg-cyan-500/8 shadow-[0_0_0_1px_rgba(34,211,238,.16)]' : 'border-white/8 bg-white/[0.03] hover:bg-white/[0.05]'}">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="min-w-0">
+                    <div class="truncate text-2xl font-semibold tracking-tight text-slate-100">${customer.name || 'Onbekende klant'}</div>
+                    <div class="mt-3 text-xl text-slate-300">${[customer.city, customer.country].filter(Boolean).join(', ') || '—'}</div>
+                    <div class="mt-3 truncate text-lg text-slate-400">${[customer.address, customer.postcode, customer.city, customer.country].filter(Boolean).join(', ') || 'Geen adres beschikbaar'}</div>
+                  </div>
+                  <div class="shrink-0 rounded-full border px-4 py-2 text-base font-medium ${meta.pill}">${meta.label}</div>
+                </div>
+              </button>`;
+          }).join('');
+
+      const bindSelection = (container, closeAfter) => {
+        if (!container) return;
+        container.innerHTML = cardHtml;
+        container.querySelectorAll('[data-customer-id]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            if (closeAfter) {
+              clearCustomerSearch();
+              configureCustomersDialog('all');
+              safeClose('customersDialog');
+            }
+            selectCustomer(btn.dataset.customerId);
+          });
+        });
+      };
+
+      bindSelection(el('customerList'), false);
+      bindSelection(el('customerListModal'), true);
+    }
+
+    function renderHistory(customer) {
+      el('historyCount').textContent = customer.history.length;
+      el('serviceHistoryDialogCustomer').textContent = customer.name || '-';
+
+      const container = el('serviceHistoryDialogList');
+      if (!customer.history.length) {
+        container.innerHTML = `<div class="rounded-[22px] border border-white/8 bg-white/[0.03] px-5 py-4 text-slate-400">Nog geen servicehistorie</div>`;
+        return;
+      }
+
+      container.innerHTML = customer.history.map(event => `
+        <div class="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+          <div class="flex items-center justify-between gap-3">
+            <div class="text-lg font-semibold text-slate-100">${event.machine_name || 'Machine'}</div>
+            <div class="text-sm text-slate-400">${formatDate(event.created_at)}</div>
+          </div>
+          <div class="mt-2 text-sm text-slate-300">${formatServiceMonth(event.service_month)}${event.engineer_name ? ` · ${event.engineer_name}` : ''}</div>
+          ${event.note ? `<div class="mt-2 text-sm text-slate-400">${event.note}</div>` : ''}
+          ${event.photo_url ? `<div class="mt-3"><a href="${event.photo_url}" target="_blank" rel="noreferrer"><img src="${event.photo_url}" alt="Servicefoto" class="max-h-64 w-full rounded-2xl border border-white/10 object-cover" /></a></div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function renderMachines(customer) {
+      el('machinesTitleCount').textContent = `${customer.machines.length} machines`;
+      el('machinesDialogCustomer').textContent = customer.name || '-';
+
+      const container = el('machinesDialogList');
+      if (!customer.machines.length) {
+        container.innerHTML = `<div class="rounded-[22px] border border-white/8 bg-white/[0.03] p-5 text-slate-400">Geen machines gevonden.</div>`;
+        return;
+      }
+
+      container.innerHTML = customer.machines.map(machine => `
+        <div class="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="text-lg font-semibold text-slate-100">${machine.machine_name || 'Onbekende machine'}</div>
+              <div class="mt-1 text-sm text-slate-400">${machine.type || '—'}${machine.latestEvent?.service_month || machine.last_service ? ` · Laatste service: ${formatServiceMonth(machine.latestEvent?.service_month || machine.last_service)}` : ''}</div>
+            </div>
+            <div class="flex flex-wrap gap-2 justify-end">              <button data-machine-service="${machine.id}" class="rounded-xl bg-white/10 px-3 py-1 text-sm font-medium transition hover:bg-white/15">Service</button>            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openServiceDialog(machineId) {
+      const machine = state.machines.find(m => m.id === machineId);
+      if (!machine) return;
+
+      state.selectedMachineId = machineId;
+      el('serviceDialogMachine').textContent = `${machine.machine_name || 'Onbekende machine'}${machine.type ? ` · ${machine.type}` : ''}`;
+      el('serviceMonthInput').value = getCurrentServiceMonth();
+      el('serviceEngineerInput').value = '';
+      el('serviceNoteInput').value = '';
+      resetServicePhotoUi();
+      openModal('serviceDialog');
+    }
+
+    async function saveServiceEvent() {
+      const machineId = state.selectedMachineId;
+      if (!machineId) throw new Error('Geen machine geselecteerd');
+
+      const photoFile = el('servicePhotoInput')?.files?.[0] || null;
+      const payload = {
+        machine_id: machineId,
+        service_month: normalizeServiceMonthInput(el('serviceMonthInput').value),
+        engineer_name: el('serviceEngineerInput').value.trim() || null,
+        note: el('serviceNoteInput').value.trim() || null,
+        photo_url: await preparePhotoValue(photoFile)
+      };
+
+      const { error } = await state.supabase.from(state.config.service_events).insert(payload);
+      if (error) throw error;
+
+      safeClose('serviceDialog');
+      resetServicePhotoUi();
+      await loadData();
+
+      if (state.selectedCustomerId) {
+        selectCustomer(state.selectedCustomerId);
+        const customer = state.enrichedCustomers.find(c => c.id === state.selectedCustomerId);
+        if (customer) {
+          renderMachines(customer);
+          openModal('machinesDialog');
+        }
+      }
+
+      showToast(photoFile ? 'Service met foto opgeslagen' : 'Service opgeslagen');
+    }
+
+    function openHistoryDialog(machineId) {
+      const machine = state.machines.find(m => m.id === machineId);
+      const events = getMachineEvents(machineId);
+
+      el('historyDialogMachine').textContent = machine ? `${machine.machine_name || 'Onbekende machine'}${machine.type ? ` · ${machine.type}` : ''}` : '-';
+
+      const list = el('historyDialogList');
+      if (!events.length) {
+        list.innerHTML = `<div class="rounded-[22px] border border-white/8 bg-white/[0.03] px-5 py-4 text-slate-400">Nog geen servicehistorie voor deze machine.</div>`;
+      } else {
+        list.innerHTML = events.map(event => `
+          <div class="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+            <div class="flex items-center justify-between gap-3">
+              <div class="text-lg font-semibold text-slate-100">${formatServiceMonth(event.service_month)}</div>
+              <div class="text-sm text-slate-400">${formatDate(event.created_at)}</div>
+            </div>
+            <div class="mt-2 text-sm text-slate-300">${event.engineer_name ? `Monteur: ${event.engineer_name}` : 'Monteur onbekend'}</div>
+            ${event.note ? `<div class="mt-2 text-sm text-slate-400">${event.note}</div>` : ''}
+            ${event.photo_url ? `<div class="mt-3"><a href="${event.photo_url}" target="_blank" rel="noreferrer"><img src="${event.photo_url}" alt="Servicefoto" class="max-h-64 w-full rounded-2xl border border-white/10 object-cover" /></a></div>` : ''}
+          </div>
+        `).join('');
+      }
+
+      openModal('historyDialog');
+    }
+
+    function renderDetail() {
+      const customer = state.enrichedCustomers.find(c => c.id === state.selectedCustomerId) || null;
+
+      if (!customer) {
+        el('customerDetail').innerHTML = '<h2 class="text-4xl font-semibold tracking-tight text-slate-100">Selecteer een klant</h2>';
+        el('customerStatus').textContent = '-';
+        el('customerStatus').className = 'mt-5 text-5xl font-semibold tracking-tight text-slate-100';
+        el('customerMachineCount').textContent = '0';
+        el('historyCount').textContent = '0';
+        el('machinesTitleCount').textContent = '0 machines';
+        el('editCustomerBtn').disabled = true;
+        el('editCustomerBtn').classList.add('opacity-50', 'cursor-not-allowed');
+        el('serviceHistoryDialogCustomer').textContent = '-';
+        el('serviceHistoryDialogList').innerHTML = '';
+        el('machinesDialogCustomer').textContent = '-';
+        el('machinesDialogList').innerHTML = '';
+        return;
+      }
+
+      el('customerDetail').innerHTML = `
+        <h2 class="text-5xl font-semibold tracking-tight text-slate-100">${customer.name || 'Onbekende klant'}</h2>
+        <div class="mt-3 text-3xl text-slate-200">${customer.city || '—'}</div>
+        <div class="mt-3 text-xl text-slate-400">${formatAddress(customer)}</div>`;
+
+      const meta = statusMeta(customer.derivedStatus);
+      el('customerStatus').textContent = meta.label;
+      el('customerStatus').className = `mt-5 text-5xl font-semibold tracking-tight ${meta.text}`;
+      el('customerMachineCount').textContent = customer.machineCount;
+      el('editCustomerBtn').disabled = false;
+      el('editCustomerBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+
+      renderHistory(customer);
+      renderMachines(customer);
+    }
+
+    function initMap() {
+      if (state.map) return;
+
+      state.map = L.map('map', { zoomControl: true, attributionControl: true }).setView([51.2, 8.5], 5);
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        subdomains: 'abcd',
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap-bijdragers &copy; CARTO'
+      }).addTo(state.map);
+
+      state.markersLayer = L.layerGroup().addTo(state.map);
+    }
+
+    function renderMap() {
+      initMap();
+      state.markersLayer.clearLayers();
+      state.markerIndex.clear();
+
+      const customers = getVisibleCustomers().filter(c => Number.isFinite(Number(c.latitude)) && Number.isFinite(Number(c.longitude)));
+      if (!customers.length) return;
+
+      const bounds = [];
+
+      customers.forEach(customer => {
+        const meta = statusMeta(customer.derivedStatus);
+        const icon = L.divIcon({
+          className: '',
+          html: `<div class="marker-dot ${meta.marker}"></div>`,
+          iconSize: [14, 14],
+          iconAnchor: [7, 7]
+        });
+
+        const marker = L.marker([Number(customer.latitude), Number(customer.longitude)], { icon })
+          .addTo(state.markersLayer)
+          .bindPopup(`<div style="min-width:180px"><strong>${customer.name || 'Klant'}</strong><br>${customer.city || ''}<br>${customer.machineCount} machines</div>`);
+
+        marker.on('click', () => selectCustomer(customer.id));
+        state.markerIndex.set(customer.id, marker);
+        bounds.push([Number(customer.latitude), Number(customer.longitude)]);
+      });
+
+      if (bounds.length === 1) state.map.setView(bounds[0], 8);
+      else state.map.fitBounds(bounds, { padding: [30, 30] });
+    }
+
+    function selectCustomer(customerId) {
+      state.selectedCustomerId = customerId;
+      renderCustomerList();
+      renderDetail();
+
+      const customer = state.enrichedCustomers.find(c => c.id === customerId);
+      if (customer && Number.isFinite(Number(customer.latitude)) && Number.isFinite(Number(customer.longitude))) {
+        const lat = Number(customer.latitude);
+        const lng = Number(customer.longitude);
+
+        if (!state.map) initMap();
+        state.map.invalidateSize();
+        state.map.flyTo([lat, lng], 14, { animate: true, duration: 0.8 });
+
+        const marker = state.markerIndex.get(customerId);
+        if (marker) {
+          setTimeout(() => marker.openPopup(), 350);
+        }
+      }
+    }
+
+    async function loadData(resetToOverview = false) {
+      if (!state.supabase) throw new Error('Supabase niet ingesteld');
+
+      const { customers, machines, service_events } = state.config;
+
+      const [cRes, mRes, eRes] = await Promise.all([
+        state.supabase.from(customers).select('*').order('name'),
+        state.supabase.from(machines).select('*').order('machine_name'),
+        state.supabase.from(service_events).select('*').order('created_at', { ascending: false })
+      ]);
+
+      if (cRes.error) throw cRes.error;
+      if (mRes.error) throw mRes.error;
+      if (eRes.error) throw eRes.error;
+
+      state.customers = cRes.data || [];
+      state.machines = mRes.data || [];
+      state.serviceEvents = eRes.data || [];
+      enrichData();
+
+      if (resetToOverview) {
+        state.statusFilter = 'all';
+        state.search = '';
+        state.selectedCustomerId = null;
+        renderKpis();
+        applyStatusFilter('all');
+        renderDetail();
+        return;
+      }
+
+      if (state.selectedCustomerId && !state.enrichedCustomers.some(c => c.id === state.selectedCustomerId)) {
+        state.selectedCustomerId = null;
+      }
+
+      renderKpis();
+      renderCustomerList();
+      renderMap();
+      renderDetail();
+    }
+
+    async function bootstrap() {
+      state.config = loadConfig();
+
+      if (!state.config.supabaseUrl || !state.config.supabaseAnonKey) {
+        showToast('Vul eerst je Supabase instellingen in config.js in.');
+        return;
+      }
+
+      state.supabase = window.supabase.createClient(state.config.supabaseUrl, state.config.supabaseAnonKey);
+      await loadData();
+    }
+
+    function bindEvents() {
+      document.querySelectorAll('.kpi-filter').forEach((card) => {
+        card.addEventListener('click', () => {
+          const filter = card.dataset.kpiFilter || 'all';
+
+          if (filter === 'red') {
+            openCustomersOverview('red', 'red_only');
+            return;
+          }
+
+          if (filter === 'orange') {
+            openCustomersOverview('orange', 'orange_only');
+            return;
+          }
+
+          if (filter === 'green') {
+            showMapForFilter('green');
+            return;
+          }
+
+          showMapForFilter('all');
+        });
+      });
+
+      on('refreshBtnTop', 'click', async () => {
+        try {
+          await loadData();
+          showToast('Dashboard vernieuwd');
+        } catch (err) {
+          console.error(err);
+          showToast(err?.message || 'Verversen mislukt');
+        }
+      });
+
+      on('logoutBtn', 'click', () => doLogout());
+      on('loginSubmitBtn', 'click', () => doLogin());
+      on('loginPasswordInput', 'keydown', (e) => {
+        if (e.key === 'Enter') doLogin();
+      });
+
+      on('openCustomersBtn', 'click', () => {
+        openCustomersOverview('all', 'all');
+      });
+
+      on('customersDialogSearch', 'input', (e) => {
+        state.search = e.target.value || '';
+        renderCustomerList();
+        renderMap();
+
+        const visible = getVisibleCustomers();
+        const q = state.search.trim().toLowerCase();
+        if (!visible.length || !q) return;
+
+        const exact = visible.find(c => (c.name || '').toLowerCase() === q);
+        const starts = visible.find(c => (c.name || '').toLowerCase().startsWith(q));
+        const target = exact || starts || visible[0];
+
+        if (target) selectCustomer(target.id);
+      });
+
+      on('addCustomerBtn', 'click', () => openCustomerDialog('create'));
+      on('editCustomerBtn', 'click', () => openCustomerDialog('edit'));
+      on('saveCustomerBtn', 'click', async () => {
+        try {
+          await saveCustomer();
+        } catch (err) {
+          console.error(err);
+          showToast(err?.message || 'Klant opslaan mislukt');
+        }
+      });
+
+      on('manageMachinesBtn', 'click', () => openManageMachinesDialog());
+      on('deleteCustomerBtn', 'click', async () => {
+        try {
+          await deleteSelectedCustomer();
+        } catch (err) {
+          console.error(err);
+          showToast(err?.message || 'Klant verwijderen mislukt');
+        }
+      });
+
+      on('googleMapsBtn', 'click', () => {
+        const customer = state.customers.find((c) => c.id === state.selectedCustomerId);
+        if (!customer) return;
+
+        const parts = [customer.name, customer.address, customer.postcode, customer.city, customer.country]
+          .filter(Boolean)
+          .join(', ');
+
+        const coords = customer.latitude != null && customer.longitude != null
+          ? `${customer.latitude},${customer.longitude}`
+          : '';
+
+        const query = encodeURIComponent(coords || parts);
+        const url = `https://www.google.com/maps/search/?api=1&query=${query}`;
+        window.open(url, '_blank', 'noopener');
+      });
+
+      on('saveMachineBtn', 'click', async () => {
+        try {
+          await saveMachine();
+        } catch (err) {
+          console.error(err);
+          showToast(err?.message || 'Machine opslaan mislukt');
+        }
+      });
+
+      on('deleteMachineBtn', 'click', async () => {
+        try {
+          await deleteSelectedMachine();
+        } catch (err) {
+          console.error(err);
+          showToast(err?.message || 'Machine verwijderen mislukt');
+        }
+      });
+
+      on('openServiceHistoryBtn', 'click', () => {
+        const customer = state.enrichedCustomers.find(c => c.id === state.selectedCustomerId);
+        if (!customer) {
+          showToast('Selecteer eerst een klant');
           return;
         }
+        renderHistory(customer);
+        openModal('serviceHistoryDialog');
+      });
 
+      on('openMachinesBtn', 'click', () => {
+        const customer = state.enrichedCustomers.find(c => c.id === state.selectedCustomerId);
+        if (!customer) {
+          showToast('Selecteer eerst een klant');
+          return;
+        }
+        renderMachines(customer);
+        openModal('machinesDialog');
+      });
+
+      on('addMachineBtnPopup', 'click', () => {
+        safeClose('machinesDialog');
+        openMachineDialog();
+      });
+
+      on('manageMachinesBtnPopup', 'click', () => {
+        safeClose('machinesDialog');
+        openManageMachinesDialog();
+      });
+
+      on('saveServiceBtn', 'click', async () => {
         try {
-          state.loading = true;
-          refreshBtn.disabled = true;
-          showStatus("Data laden...", "info", true);
-
-          const [customersRes, machinesRes, eventsRes] = await Promise.all([
-            supabaseClient.from("customers").select("id, name, address, postcode, city, country, latitude, longitude").not("id", "is", null),
-            supabaseClient.from("machines").select("id, customer_id, type, machine_name, serial_number, last_service").not("customer_id", "is", null),
-            supabaseClient.from("service_events").select("id, machine_id, service_month, engineer_name, note, created_at, photo_url").order("created_at", { ascending: false })
-          ]);
-
-          if (customersRes.error) throw customersRes.error;
-          if (machinesRes.error) throw machinesRes.error;
-          if (eventsRes.error) throw eventsRes.error;
-
-          const eventsByMachineId = new Map();
-          (eventsRes.data || []).forEach((event) => {
-            const list = eventsByMachineId.get(event.machine_id) || [];
-            list.push(event);
-            eventsByMachineId.set(event.machine_id, list);
-          });
-
-          const customers = (customersRes.data || []).map((customer) => ({
-            ...customer,
-            latitude: customer.latitude !== null ? Number(customer.latitude) : null,
-            longitude: customer.longitude !== null ? Number(customer.longitude) : null,
-            machines: [],
-            recentEvents: []
-          }));
-
-          const customerById = new Map(customers.map((customer) => [customer.id, customer]));
-
-          (machinesRes.data || []).forEach((machine) => {
-            const customer = customerById.get(machine.customer_id);
-            if (!customer) return;
-            const machineEvents = (eventsByMachineId.get(machine.id) || []).slice().sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-            const mappedMachine = {
-              ...machine,
-              status: machineStatus(machine.last_service),
-              events: machineEvents
-            };
-            customer.machines.push(mappedMachine);
-            machineEvents.forEach((event) => {
-              customer.recentEvents.push({ ...event, machine_name: machine.machine_name || "Machine" });
-            });
-          });
-
-          customers.forEach((customer) => {
-            customer.machines.sort((a, b) => String(a.machine_name || "").localeCompare(String(b.machine_name || ""), "nl"));
-            customer.recentEvents.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-          });
-
-          state.customers = customers;
-          state.customerById = customerById;
-          state.filteredCustomers = getFilteredCustomers();
-
-          updateMetrics();
-          renderCustomerList();
-          renderMarkers();
-
-          const preferredId = state.selectedCustomerId && state.customerById.has(state.selectedCustomerId)
-            ? state.selectedCustomerId
-            : (state.filteredCustomers[0] && state.filteredCustomers[0].id);
-
-          if (preferredId) {
-            selectCustomer(preferredId, false);
-          }
-
-          showStatus("Data geladen", "success");
-        } catch (error) {
-          console.error(error);
-          showStatus(`Laden mislukt: ${error.message || "onbekende fout"}`, "error", true);
-        } finally {
-          state.loading = false;
-          refreshBtn.disabled = false;
+          await saveServiceEvent();
+        } catch (err) {
+          console.error(err);
+          showToast(err?.message || 'Service opslaan mislukt');
         }
-      }
+      });
 
-      function selectCustomer(customerId, centerOnMap) {
-        renderCustomerDetails(customerId);
-        if (centerOnMap) {
-          const marker = state.markersByCustomerId.get(customerId);
-          if (marker) {
-            state.map.setView(marker.getLatLng(), Math.max(state.map.getZoom(), 12), { animate: true });
-            marker.openPopup();
-          }
-        }
-      }
-
-      async function saveCurrentMachine() {
-        const customerId = state.selectedCustomerId;
-        const machineId = state.activeMachineId;
-        if (!customerId || !machineId || !supabaseClient) return;
-
-        const now = new Date();
-        const serviceMonth = `${String(now.getMonth() + 1).padStart(2, "0")}-${now.getFullYear()}`;
-        const engineerName = engineerInput.value.trim() || "Hoofdmonteur";
-        const note = noteInput.value.trim();
-        const file = photoInput.files && photoInput.files[0] ? photoInput.files[0] : null;
-
+      on('servicePhotoInput', 'change', async () => {
         try {
-          saveServiceBtn.disabled = true;
-          saveServiceBtn.textContent = "Opslaan...";
-
-          let photoUrl = null;
-          if (file) {
-            photoUrl = await uploadPhoto(file, customerId, machineId);
-          }
-
-          const { error: updateError } = await supabaseClient.from("machines").update({ last_service: serviceMonth }).eq("id", machineId);
-          if (updateError) throw updateError;
-
-          const { error: eventError } = await supabaseClient.from("service_events").insert({
-            machine_id: machineId,
-            service_month: serviceMonth,
-            engineer_name: engineerName,
-            note,
-            photo_url: photoUrl
-          });
-          if (eventError) throw eventError;
-
-          closeServiceModal();
-          await loadData();
-          if (state.customerById.has(customerId)) selectCustomer(customerId, false);
-          showStatus(`Service opgeslagen voor ${state.activeMachineName}`, "success");
-          state.activeMachineId = null;
-          state.activeMachineName = "";
-        } catch (error) {
-          console.error(error);
-          showStatus(`Opslaan mislukt: ${error.message || "onbekende fout"}`, "error", true);
-        } finally {
-          saveServiceBtn.disabled = false;
-          saveServiceBtn.textContent = "Opslaan";
+          await updateServicePhotoPreview();
+        } catch (err) {
+          console.error(err);
+          showToast(err?.message || 'Foto laden mislukt');
+          resetServicePhotoUi();
         }
-      }
+      });
 
-      function initMap() {
-        state.map = L.map("map", { zoomControl: true }).setView([52.1326, 5.2913], 7);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          maxZoom: 19,
-          attribution: "&copy; OpenStreetMap-bijdragers"
-        }).addTo(state.map);
-        state.markersLayer = L.layerGroup().addTo(state.map);
-      }
 
-      function debounce(fn, delay) {
-        let timer = null;
-        return (...args) => {
-          clearTimeout(timer);
-          timer = setTimeout(() => fn(...args), delay);
-        };
-      }
+      const machinesDialog = el('machinesDialog');
+      machinesDialog?.addEventListener('click', (e) => {
+        const serviceBtn = e.target.closest('[data-machine-service]');
+        if (serviceBtn) {
+          safeClose('machinesDialog');
+          openServiceDialog(serviceBtn.dataset.machineService);
+          return;
+        }
+      });
 
-      function bindEvents() {
-        searchInput.addEventListener("input", debounce(() => {
-          state.filteredCustomers = getFilteredCustomers();
-          renderCustomerList();
-          renderMarkers();
-          if (!state.filteredCustomers.some((customer) => customer.id === state.selectedCustomerId)) {
-            const first = state.filteredCustomers[0];
-            if (first) selectCustomer(first.id, false);
-          }
-        }, 120));
+      wireDialogClose('customerDialog', 'closeCustomerBtn');
+      on('cancelCustomerBtn', 'click', closeCustomerDialog);
 
-        refreshBtn.addEventListener("click", loadData);
-        closeModalTop.addEventListener("click", closeServiceModal);
-        saveServiceBtn.addEventListener("click", saveCurrentMachine);
-        closeHistoryTop.addEventListener("click", closeHistoryModal);
-        closeHistoryBottom.addEventListener("click", closeHistoryModal);
+      wireDialogClose('machineDialog', 'closeMachineBtn', closeMachineDialog);
+      on('cancelMachineBtn', 'click', closeMachineDialog);
 
-        serviceModal.addEventListener("click", (event) => {
-          if (event.target === serviceModal) closeServiceModal();
-        });
-        historyModal.addEventListener("click", (event) => {
-          if (event.target === historyModal) closeHistoryModal();
-        });
+      wireDialogClose('manageMachinesDialog', 'closeManageMachinesBtn');
+      wireDialogClose('customersDialog', 'closeCustomersBtn', () => {
+        clearCustomerSearch();
+        configureCustomersDialog('all');
+      });
+      wireDialogClose('serviceDialog', 'closeServiceBtn', resetServicePhotoUi);
+      on('cancelServiceBtn', 'click', () => {
+        resetServicePhotoUi();
+        safeClose('serviceDialog');
+      });
+      wireDialogClose('historyDialog', 'closeHistoryBtn');
+      wireDialogClose('serviceHistoryDialog', 'closeServiceHistoryBtn');
+      wireDialogClose('machinesDialog', 'closeMachinesBtn');
+    }
 
-        photoInput.addEventListener("change", () => {
-          const file = photoInput.files && photoInput.files[0];
-          if (!file) {
-            photoPreview.src = "";
-            photoPreview.classList.add("hidden");
-            return;
-          }
-          const reader = new FileReader();
-          reader.onload = () => {
-            photoPreview.src = reader.result;
-            photoPreview.classList.remove("hidden");
-          };
-          reader.readAsDataURL(file);
-        });
+    bindEvents();
+    applyStatusFilter('all');
 
-        machineList.addEventListener("click", (event) => {
-          const serviceButton = event.target.closest(".service-btn");
-          const historyButton = event.target.closest(".history-btn");
-          if (serviceButton) {
-            openServiceModal(serviceButton.dataset.id, serviceButton.dataset.name || "Machine");
-            return;
-          }
-          if (historyButton) {
-            const customer = state.customerById.get(state.selectedCustomerId);
-            const machine = customer?.machines.find((item) => String(item.id) === String(historyButton.dataset.id));
-            openHistoryModal(`Service historie - ${historyButton.dataset.name || "Machine"}`, machine?.events || []);
-          }
-        });
+    if (isAuthenticated()) hideAuthGate();
+    else showAuthGate();
 
-        openCustomerHistoryBtn.addEventListener("click", () => {
-          const customer = state.customerById.get(state.selectedCustomerId);
-          if (!customer) return;
-          openHistoryModal(`Volledige historie - ${safeText(customer.name, "Klant")}`, customer.recentEvents || []);
-        });
-      }
-
-      initMap();
-      bindEvents();
-      loadData();
-    })();
+    bootstrap().catch(err => {
+      console.error(err);
+      showToast(err?.message || 'Kon dashboard niet laden');
+    });
   </script>
 </body>
 </html>
