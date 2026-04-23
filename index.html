@@ -1390,6 +1390,22 @@
       showToast(photoFile ? 'Service met foto opgeslagen' : 'Service opgeslagen');
     }
 
+    async function deleteServiceEventById(eventId) {
+      const ok = window.confirm('Weet je zeker dat je dit servicebezoek wilt verwijderen?');
+      if (!ok) return false;
+
+      const { error } = await state.supabase
+        .from(state.config.service_events)
+        .delete()
+        .eq('id', eventId);
+
+      if (error) throw error;
+
+      await loadData();
+      if (state.selectedCustomerId) selectCustomer(state.selectedCustomerId);
+      return true;
+    }
+
     function openHistoryDialog(machineId) {
       const machine = state.machines.find(m => m.id === machineId);
       const events = getMachineEvents(machineId);
