@@ -738,7 +738,7 @@
       }
 
       closeCustomerDialog();
-      await loadData(true);
+      await loadData();
       if (savedId) selectCustomer(savedId);
       showToast(state.customerDialogMode === 'edit' ? 'Klant bijgewerkt' : 'Klant toegevoegd');
     }
@@ -1377,16 +1377,7 @@
       safeClose('serviceDialog');
       resetServicePhotoUi();
       await loadData();
-
-      if (state.selectedCustomerId) {
-        selectCustomer(state.selectedCustomerId);
-        const customer = state.enrichedCustomers.find(c => c.id === state.selectedCustomerId);
-        if (customer) {
-          renderMachines(customer);
-          openModal('machinesDialog');
-        }
-      }
-
+      if (state.selectedCustomerId) selectCustomer(state.selectedCustomerId);
       showToast(photoFile ? 'Service met foto opgeslagen' : 'Service opgeslagen');
     }
 
@@ -1518,7 +1509,7 @@
       }
     }
 
-    async function loadData(resetToOverview = false) {
+    async function loadData() {
       if (!state.supabase) throw new Error('Supabase niet ingesteld');
 
       const { customers, machines, service_events } = state.config;
@@ -1538,23 +1529,12 @@
       state.serviceEvents = eRes.data || [];
       enrichData();
 
-      if (resetToOverview) {
-        state.statusFilter = 'all';
-        state.search = '';
-        state.selectedCustomerId = null;
-        renderKpis();
-        applyStatusFilter('all');
-        renderDetail();
-        return;
-      }
-
-      if (state.selectedCustomerId && !state.enrichedCustomers.some(c => c.id === state.selectedCustomerId)) {
-        state.selectedCustomerId = null;
-      }
+      state.statusFilter = 'all';
+      state.search = '';
+      state.selectedCustomerId = null;
 
       renderKpis();
-      renderCustomerList();
-      renderMap();
+      applyStatusFilter('all');
       renderDetail();
     }
 
